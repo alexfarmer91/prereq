@@ -1,0 +1,17 @@
+GET_STARTED.md
+
+# Claude Code internal state
+.claude/
+
+# Rust build artifacts
+backend/target/
+
+# Environment files
+.env
+.env.local
+
+# Flutter build artifacts (for when we add frontend)
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/build/
