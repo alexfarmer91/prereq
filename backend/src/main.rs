@@ -1,20 +1,12 @@
 use std::{net::SocketAddr, sync::Arc};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod config;
-mod error;
-mod middleware;
-mod models;
-mod routes;
-mod services;
-
-use config::Config;
-
-#[derive(Clone)]
-pub struct AppState {
-    pub jwks: Option<Arc<jsonwebtoken::jwk::JwkSet>>,
-    pub http: reqwest::Client,
-}
+use prereq_backend::{
+    config::Config,
+    db, routes,
+    services::{self, cache::Cache, market_store::MarketStore},
+    AppState,
+};
 
 #[tokio::main]
 async fn main() {
@@ -44,10 +36,22 @@ async fn main() {
         None
     };
 
+    let db = db::init(config.database_url.as_deref()).await;
+    let cache = Cache::connect(config.redis_url.as_deref()).await;
+
     let state = AppState {
         jwks,
         http: reqwest::Client::new(),
+        db,
+        cache,
+        markets: MarketStore::default(),
+        anthropic_api_key: config
+            .anthropic_api_key
+            .filter(|k| !k.is_empty() && !k.ends_with("...")),
     };
+
+    services::market_store::spawn_refresh_task(state.clone());
+    services::arb::spawn_arb_task(state.clone());
 
     let app = routes::app_router(state)
         .layer(tower_http::trace::TraceLayer::new_for_http())
@@ -55,8 +59,12 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
     tracing::info!("Listening on {addr}");
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("failed to bind server address");
+    axum::serve(listener, app)
+        .await
+        .expect("server terminated unexpectedly");
 }
 
 async fn fetch_jwks(url: &str) -> Result<jsonwebtoken::jwk::JwkSet, reqwest::Error> {

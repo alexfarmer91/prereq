@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Raw market shape returned by the Kalshi v2 API.
@@ -27,6 +28,22 @@ pub struct KalshiMarket {
     pub mve_collection_ticker: Option<String>,
 }
 
+/// AI score produced by the Claude scoring engine.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Score {
+    pub fair_probability: f64,
+    pub confidence: String,
+    pub edge: f64,
+    pub ev_per_dollar: f64,
+    pub rationale: String,
+    #[serde(default)]
+    pub signals: Vec<String>,
+    #[serde(default)]
+    pub risks: Vec<String>,
+    #[serde(default = "Utc::now")]
+    pub scored_at: DateTime<Utc>,
+}
+
 /// Clean market struct returned by our API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Market {
@@ -44,4 +61,13 @@ pub struct Market {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rules_primary: Option<String>,
     pub category: String,
+    #[serde(default)]
+    pub score: Option<Score>,
+}
+
+/// One point of price history for the detail chart.
+#[derive(Debug, Clone, Serialize)]
+pub struct HistoryPoint {
+    pub ts: String,
+    pub yes_price: f64,
 }
