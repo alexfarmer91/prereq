@@ -12,6 +12,21 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: prereq_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prereq_test
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -24,8 +39,29 @@ jobs:
         run: cargo fmt --check
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
-      - name: Tests
+      - name: Tests (unit + DB integration)
         run: cargo test
+      - name: Boot smoke test
+        env:
+          SKIP_AUTH: "true"
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prereq_test
+          PORT: "3000"
+        run: |
+          cargo build
+          ./target/debug/prereq-backend &
+          SERVER_PID=$!
+          for i in $(seq 1 30); do
+            if curl -fsS localhost:3000/health > /dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          echo "--- /health" && curl -fsS localhost:3000/health
+          echo "--- /markets (live Kalshi)" && curl -fsS "localhost:3000/markets?sort=volume" | head -c 600; echo
+          echo "--- POST /watchlist" && curl -fsS -X POST localhost:3000/watchlist -H 'content-type: application/json' -d '{"ticker":"SMOKE-T1","alert_edge_threshold":0.05}'
+          echo "--- GET /watchlist" && curl -fsS localhost:3000/watchlist
+          echo "--- POST /bets" && curl -fsS -X POST localhost:3000/bets -H 'content-type: application/json' -d '{"market_ticker":"SMOKE-T1","market_title":"Smoke","side":"yes","entry_price_dollars":0.5,"contracts":2,"your_probability":0.6,"kelly_fraction":null}'
+          echo "--- GET /performance" && curl -fsS localhost:3000/performance
+          echo "--- GET /arbs" && curl -fsS localhost:3000/arbs
+          kill $SERVER_PID
 
   frontend:
     name: Frontend (Flutter)

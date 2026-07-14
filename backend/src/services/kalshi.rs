@@ -149,8 +149,7 @@ fn apply_filters(markets: Vec<KalshiMarket>) -> Vec<KalshiMarket> {
             volume_24h >= 5000.0
                 && spread <= 0.08
                 && hours_to_close >= 48
-                && yes_bid >= 0.03
-                && yes_bid <= 0.97
+                && (0.03..=0.97).contains(&yes_bid)
         })
         .collect()
 }
@@ -368,6 +367,51 @@ pub(crate) fn to_market(m: KalshiMarket) -> Option<Market> {
     })
 }
 
+fn infer_category(event_ticker: &str) -> String {
+    let t = event_ticker.to_uppercase();
+    if t.starts_with("KXHIGH")
+        || t.starts_with("KXLOW")
+        || t.starts_with("KXPRCP")
+        || t.starts_with("KXSNOW")
+        || t.starts_with("KXTEMP")
+    {
+        "Weather"
+    } else if t.starts_with("INX")
+        || t.starts_with("NDX")
+        || t.starts_with("DJIA")
+        || t.starts_with("FED")
+        || t.starts_with("CPI")
+        || t.starts_with("GDP")
+        || t.starts_with("BTC")
+        || t.starts_with("ETH")
+        || t.starts_with("KXBTC")
+        || t.starts_with("KXETH")
+    {
+        "Economics"
+    } else if t.starts_with("PRES")
+        || t.starts_with("SENATE")
+        || t.starts_with("HOUSE")
+        || t.starts_with("GOV")
+        || t.starts_with("POTUS")
+    {
+        "Politics"
+    } else if t.starts_with("NFL")
+        || t.starts_with("NBA")
+        || t.starts_with("MLB")
+        || t.starts_with("NHL")
+        || t.starts_with("NCAAF")
+        || t.starts_with("NCAAB")
+        || t.starts_with("MLS")
+        || t.starts_with("UFC")
+        || t.starts_with("FIFA")
+    {
+        "Sports"
+    } else {
+        "Other"
+    }
+    .to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -447,49 +491,4 @@ mod tests {
         assert_eq!(infer_category("NFLGAME-X"), "Sports");
         assert_eq!(infer_category("XYZ"), "Other");
     }
-}
-
-fn infer_category(event_ticker: &str) -> String {
-    let t = event_ticker.to_uppercase();
-    if t.starts_with("KXHIGH")
-        || t.starts_with("KXLOW")
-        || t.starts_with("KXPRCP")
-        || t.starts_with("KXSNOW")
-        || t.starts_with("KXTEMP")
-    {
-        "Weather"
-    } else if t.starts_with("INX")
-        || t.starts_with("NDX")
-        || t.starts_with("DJIA")
-        || t.starts_with("FED")
-        || t.starts_with("CPI")
-        || t.starts_with("GDP")
-        || t.starts_with("BTC")
-        || t.starts_with("ETH")
-        || t.starts_with("KXBTC")
-        || t.starts_with("KXETH")
-    {
-        "Economics"
-    } else if t.starts_with("PRES")
-        || t.starts_with("SENATE")
-        || t.starts_with("HOUSE")
-        || t.starts_with("GOV")
-        || t.starts_with("POTUS")
-    {
-        "Politics"
-    } else if t.starts_with("NFL")
-        || t.starts_with("NBA")
-        || t.starts_with("MLB")
-        || t.starts_with("NHL")
-        || t.starts_with("NCAAF")
-        || t.starts_with("NCAAB")
-        || t.starts_with("MLS")
-        || t.starts_with("UFC")
-        || t.starts_with("FIFA")
-    {
-        "Sports"
-    } else {
-        "Other"
-    }
-    .to_string()
 }
