@@ -4,7 +4,7 @@ use axum::{
     Router,
 };
 
-use crate::{middleware::auth::auth_middleware, AppState};
+use crate::{error::AppError, middleware::auth::auth_middleware, AppState};
 
 pub mod arbs;
 pub mod bets;
@@ -44,5 +44,12 @@ pub fn app_router(state: AppState) -> Router {
         // headers on WebSocket connects).
         .route("/ws/markets", get(ws::ws_markets))
         .merge(protected)
+        // Explicit fallback so unmatched paths get an enveloped 404 instead of
+        // falling into the protected router's auth layer.
+        .fallback(not_found)
         .with_state(state)
+}
+
+async fn not_found() -> AppError {
+    AppError::NotFound
 }
