@@ -25,13 +25,17 @@ pub struct AuthUser {
     pub clerk_user_id: String,
 }
 
+/// Dev-only escape hatch — never set in production.
+pub fn skip_auth() -> bool {
+    std::env::var("SKIP_AUTH").as_deref() == Ok("true")
+}
+
 pub async fn auth_middleware(
     State(state): State<AppState>,
     mut req: Request<Body>,
     next: Next,
 ) -> Response {
-    // Dev-only escape hatch — never set in production
-    if std::env::var("SKIP_AUTH").as_deref() == Ok("true") {
+    if skip_auth() {
         req.extensions_mut().insert(AuthUser {
             clerk_user_id: "dev".to_string(),
         });
@@ -80,7 +84,7 @@ pub async fn auth_middleware(
     }
 }
 
-fn verify_jwt(
+pub fn verify_jwt(
     token: &str,
     jwks: &Arc<jsonwebtoken::jwk::JwkSet>,
 ) -> Result<AuthUser, String> {
