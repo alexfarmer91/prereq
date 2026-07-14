@@ -84,10 +84,7 @@ pub async fn auth_middleware(
     }
 }
 
-pub fn verify_jwt(
-    token: &str,
-    jwks: &Arc<jsonwebtoken::jwk::JwkSet>,
-) -> Result<AuthUser, String> {
+pub fn verify_jwt(token: &str, jwks: &Arc<jsonwebtoken::jwk::JwkSet>) -> Result<AuthUser, String> {
     let header = decode_header(token).map_err(|e| format!("Invalid token: {e}"))?;
     let kid = header.kid.ok_or_else(|| "Token missing kid".to_string())?;
 

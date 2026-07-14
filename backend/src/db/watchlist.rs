@@ -65,9 +65,8 @@ pub async fn remove(pool: &PgPool, user_id: Uuid, ticker: &str) -> Result<(), Ap
 
 /// Tickers across all users — used by the WebSocket/alerting layer.
 pub async fn all_watched_tickers(pool: &PgPool) -> Result<Vec<String>, AppError> {
-    let rows: Vec<(String,)> =
-        sqlx::query_as("SELECT DISTINCT market_ticker FROM watchlist")
-            .fetch_all(pool)
-            .await?;
+    let rows: Vec<(String,)> = sqlx::query_as("SELECT DISTINCT market_ticker FROM watchlist")
+        .fetch_all(pool)
+        .await?;
     Ok(rows.into_iter().map(|(t,)| t).collect())
 }

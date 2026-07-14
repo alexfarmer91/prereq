@@ -13,16 +13,14 @@ pub async fn init(database_url: Option<&str>) -> Option<PgPool> {
     let url = match database_url {
         Some(u) if !u.is_empty() => u,
         _ => {
-            tracing::warn!("DATABASE_URL not set — user features (watchlist/bets/performance) will return 503");
+            tracing::warn!(
+                "DATABASE_URL not set — user features (watchlist/bets/performance) will return 503"
+            );
             return None;
         }
     };
 
-    let pool = match PgPoolOptions::new()
-        .max_connections(10)
-        .connect(url)
-        .await
-    {
+    let pool = match PgPoolOptions::new().max_connections(10).connect(url).await {
         Ok(p) => p,
         Err(e) => {
             tracing::warn!("Could not connect to database: {e} — user features will return 503");
@@ -41,7 +39,6 @@ pub async fn init(database_url: Option<&str>) -> Option<PgPool> {
 
 /// Extract the pool or fail with a 503 the frontend can present cleanly.
 pub fn require(pool: &Option<PgPool>) -> Result<&PgPool, AppError> {
-    pool.as_ref().ok_or_else(|| {
-        AppError::ServiceUnavailable("Database not configured".to_string())
-    })
+    pool.as_ref()
+        .ok_or_else(|| AppError::ServiceUnavailable("Database not configured".to_string()))
 }

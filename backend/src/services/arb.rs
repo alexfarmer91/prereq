@@ -47,7 +47,9 @@ pub fn find_arbs(kalshi: &[Market], poly: &[PolyMarket]) -> Vec<ArbOpportunity> 
             .filter(|(sim, _)| *sim >= MIN_SIMILARITY)
             .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
-        let Some((_, poly_match)) = best else { continue };
+        let Some((_, poly_match)) = best else {
+            continue;
+        };
 
         let combined = market.yes_ask + poly_match.no_price;
         if market.yes_ask > 0.0 && poly_match.no_price > 0.0 && combined < ARB_THRESHOLD {

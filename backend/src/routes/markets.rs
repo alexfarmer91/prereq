@@ -27,7 +27,11 @@ pub async fn list_markets(
     market_store::ensure_fresh(&state).await?;
     let mut markets = state.markets.all().await;
 
-    if let Some(cat) = params.category.as_deref().filter(|c| !c.eq_ignore_ascii_case("all")) {
+    if let Some(cat) = params
+        .category
+        .as_deref()
+        .filter(|c| !c.eq_ignore_ascii_case("all"))
+    {
         markets.retain(|m| m.category.eq_ignore_ascii_case(cat));
     }
 
@@ -48,9 +52,7 @@ fn sort_markets(markets: &mut [Market], sort: &str) {
         _ => markets.sort_by(|a, b| {
             let edge = |m: &Market| m.score.as_ref().map(|s| s.edge.abs());
             match (edge(a), edge(b)) {
-                (Some(ea), Some(eb)) => {
-                    eb.partial_cmp(&ea).unwrap_or(std::cmp::Ordering::Equal)
-                }
+                (Some(ea), Some(eb)) => eb.partial_cmp(&ea).unwrap_or(std::cmp::Ordering::Equal),
                 (Some(_), None) => std::cmp::Ordering::Less,
                 (None, Some(_)) => std::cmp::Ordering::Greater,
                 (None, None) => b

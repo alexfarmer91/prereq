@@ -52,7 +52,9 @@ fn normalize(m: GammaMarket) -> Option<PolyMarket> {
         return None;
     }
 
-    let yes_idx = outcomes.iter().position(|o| o.eq_ignore_ascii_case("yes"))?;
+    let yes_idx = outcomes
+        .iter()
+        .position(|o| o.eq_ignore_ascii_case("yes"))?;
     let no_idx = outcomes.iter().position(|o| o.eq_ignore_ascii_case("no"))?;
 
     let yes_price: f64 = prices[yes_idx].parse().ok()?;

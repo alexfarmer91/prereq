@@ -83,9 +83,7 @@ pub async fn create_bet(
     if !matches!(body.side.as_str(), "yes" | "no") {
         return Err(AppError::BadRequest("side must be yes or no".into()));
     }
-    if !body.entry_price_dollars.is_finite()
-        || !(0.0..=1.0).contains(&body.entry_price_dollars)
-    {
+    if !body.entry_price_dollars.is_finite() || !(0.0..=1.0).contains(&body.entry_price_dollars) {
         return Err(AppError::BadRequest(
             "entry_price_dollars must be between 0 and 1".into(),
         ));
@@ -143,8 +141,7 @@ pub async fn resolve_bet(
 
     let pool = db::require(&state.db)?;
     let me = db::users::get_or_create(pool, &user.clerk_user_id).await?;
-    let bet =
-        db::bets::update_outcome(pool, me.id, bet_id, &body.outcome, body.exit_price_dollars)
-            .await?;
+    let bet = db::bets::update_outcome(pool, me.id, bet_id, &body.outcome, body.exit_price_dollars)
+        .await?;
     Ok(Json(ApiResponse::ok(bet)))
 }

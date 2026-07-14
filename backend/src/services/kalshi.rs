@@ -62,9 +62,8 @@ async fn fetch_all_markets(client: &Client) -> Result<Vec<KalshiMarket>, AppErro
     let mut pages = 0;
 
     loop {
-        let mut url = format!(
-            "{KALSHI_BASE}/events?status=open&with_nested_markets=true&limit={PAGE_LIMIT}"
-        );
+        let mut url =
+            format!("{KALSHI_BASE}/events?status=open&with_nested_markets=true&limit={PAGE_LIMIT}");
         if let Some(ref c) = cursor {
             url.push_str(&format!("&cursor={c}"));
         }
@@ -105,7 +104,10 @@ async fn fetch_all_markets(client: &Client) -> Result<Vec<KalshiMarket>, AppErro
 
         pages += 1;
         if pages >= MAX_PAGES {
-            tracing::debug!("Reached {MAX_PAGES}-page cap ({} markets collected)", all.len());
+            tracing::debug!(
+                "Reached {MAX_PAGES}-page cap ({} markets collected)",
+                all.len()
+            );
             break;
         }
 
@@ -342,12 +344,7 @@ pub(crate) fn to_market(m: KalshiMarket) -> Option<Market> {
         .unwrap_or("0")
         .parse()
         .unwrap_or(0.0);
-    let volume_24h: f64 = m
-        .volume_24h_fp
-        .as_deref()
-        .unwrap_or("0")
-        .parse()
-        .ok()?;
+    let volume_24h: f64 = m.volume_24h_fp.as_deref().unwrap_or("0").parse().ok()?;
 
     let category = m
         .category
@@ -398,9 +395,9 @@ mod tests {
     fn filters_drop_thin_wide_late_and_extreme_markets() {
         let markets = vec![
             raw("GOOD", "0.50", "0.55", "9000", 100),
-            raw("THIN", "0.50", "0.55", "100", 100),     // low volume
-            raw("WIDE", "0.50", "0.60", "9000", 100),    // spread > 0.08
-            raw("LATE", "0.50", "0.55", "9000", 10),     // closes < 48h
+            raw("THIN", "0.50", "0.55", "100", 100), // low volume
+            raw("WIDE", "0.50", "0.60", "9000", 100), // spread > 0.08
+            raw("LATE", "0.50", "0.55", "9000", 10), // closes < 48h
             raw("EXTREME", "0.98", "0.99", "9000", 100), // near resolution
         ];
         let kept = apply_filters(markets);
