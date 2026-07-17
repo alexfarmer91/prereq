@@ -1,4 +1,5 @@
 pub mod market;
+pub mod plan;
 
 use serde::{Deserialize, Serialize};
 

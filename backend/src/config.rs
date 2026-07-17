@@ -6,6 +6,7 @@ pub struct Config {
     pub database_url: Option<String>,
     pub redis_url: Option<String>,
     pub anthropic_api_key: Option<String>,
+    pub mixpanel_token: Option<String>,
 }
 
 impl Config {
@@ -20,6 +21,7 @@ impl Config {
             database_url: env::var("DATABASE_URL").ok(),
             redis_url: env::var("REDIS_URL").ok(),
             anthropic_api_key: env::var("ANTHROPIC_API_KEY").ok(),
+            mixpanel_token: env::var("MIXPANEL_TOKEN").ok(),
         }
     }
 }

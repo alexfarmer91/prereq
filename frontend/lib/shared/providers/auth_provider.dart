@@ -1,6 +1,7 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../core/analytics/analytics.dart';
 import '../../core/config/app_config.dart';
 
 part 'auth_provider.g.dart';
@@ -57,12 +58,21 @@ class AuthController extends _$AuthController {
   /// Called by the Clerk bridge widget whenever the Clerk auth state changes.
   void attachClerk(ClerkAuthState clerk) {
     _clerk = clerk;
-    final signedIn = clerk.user != null;
+    final user = clerk.user;
     final next = AuthState(
-      status: signedIn ? AuthStatus.signedIn : AuthStatus.signedOut,
+      status: user != null ? AuthStatus.signedIn : AuthStatus.signedOut,
       mode: AuthMode.clerk,
     );
-    if (next.status != state.status) state = next;
+    if (next.status != state.status) {
+      // Identify on sign-in and session restore; reset on sign-out so the
+      // next user on this device isn't merged into the same profile.
+      if (user != null) {
+        Analytics.identify(user.id);
+      } else if (state.status == AuthStatus.signedIn) {
+        Analytics.reset();
+      }
+      state = next;
+    }
   }
 
   /// The Bearer token for API calls / WebSocket, or null when no token is

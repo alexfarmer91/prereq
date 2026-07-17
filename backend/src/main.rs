@@ -39,15 +39,17 @@ async fn main() {
     let db = db::init(config.database_url.as_deref()).await;
     let cache = Cache::connect(config.redis_url.as_deref()).await;
 
+    let http = reqwest::Client::new();
     let state = AppState {
         jwks,
-        http: reqwest::Client::new(),
+        http: http.clone(),
         db,
         cache,
         markets: MarketStore::default(),
         anthropic_api_key: config
             .anthropic_api_key
             .filter(|k| !k.is_empty() && !k.ends_with("...")),
+        telemetry: services::telemetry::Telemetry::new(http, config.mixpanel_token),
     };
 
     services::market_store::spawn_refresh_task(state.clone());

@@ -23,6 +23,13 @@ abstract final class AppConfig {
     defaultValue: '',
   );
 
+  /// Mixpanel project token (a public client-side identifier, not a secret).
+  /// Pass `--dart-define=MIXPANEL_TOKEN=` (empty) to disable tracking.
+  static const String mixpanelToken = String.fromEnvironment(
+    'MIXPANEL_TOKEN',
+    defaultValue: '73950bce8310f42d2fbcebeb8569b32c',
+  );
+
   static const String _devAuthBypass = String.fromEnvironment(
     'DEV_AUTH_BYPASS',
     defaultValue: 'false',

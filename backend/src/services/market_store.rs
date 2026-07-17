@@ -59,7 +59,7 @@ pub async fn refresh(state: &AppState) -> Result<usize, AppError> {
     if let Some(api_key) = state.anthropic_api_key.as_deref() {
         // Markets arrive sorted by 24h volume descending; score the head.
         for market in markets.iter_mut().take(SCORE_TOP_N) {
-            match scorer::get_or_score(&state.http, api_key, &state.cache, market).await {
+            match scorer::get_or_score(state, api_key, market).await {
                 Ok(score) => market.score = Some(score),
                 Err(e) => {
                     tracing::warn!("Scoring {} failed: {e}", market.ticker);

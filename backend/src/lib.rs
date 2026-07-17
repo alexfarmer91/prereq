@@ -8,7 +8,7 @@ pub mod models;
 pub mod routes;
 pub mod services;
 
-use services::{cache::Cache, market_store::MarketStore};
+use services::{cache::Cache, market_store::MarketStore, telemetry::Telemetry};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -18,6 +18,7 @@ pub struct AppState {
     pub cache: Cache,
     pub markets: MarketStore,
     pub anthropic_api_key: Option<String>,
+    pub telemetry: Telemetry,
 }
 
 impl AppState {
@@ -31,6 +32,7 @@ impl AppState {
             cache: Cache::connect(None).await,
             markets: MarketStore::default(),
             anthropic_api_key: None,
+            telemetry: Telemetry::default(),
         }
     }
 }

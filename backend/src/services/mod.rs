@@ -4,3 +4,4 @@ pub mod kalshi;
 pub mod market_store;
 pub mod polymarket;
 pub mod scorer;
+pub mod telemetry;
