@@ -9,20 +9,20 @@ use axum::{
 use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::sync::Arc;
 
 use crate::AppState;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ClerkClaims {
+pub struct GoogleClaims {
     pub sub: String,
+    pub aud: String,
     pub exp: u64,
     pub iat: u64,
 }
 
 #[derive(Clone, Debug)]
 pub struct AuthUser {
-    pub clerk_user_id: String,
+    pub google_user_id: String,
 }
 
 /// Dev-only escape hatch — never set in production.
@@ -37,7 +37,7 @@ pub async fn auth_middleware(
 ) -> Response {
     if skip_auth() {
         req.extensions_mut().insert(AuthUser {
-            clerk_user_id: "dev".to_string(),
+            google_user_id: "dev".to_string(),
         });
         return next.run(req).await;
     }
@@ -49,9 +49,12 @@ pub async fn auth_middleware(
         .and_then(|s| s.strip_prefix("Bearer "))
         .map(|s| s.to_owned());
 
-    let jwks = match &state.jwks {
-        Some(j) => j.clone(),
-        None => {
+    // Both the current key set and the expected audience must be configured
+    // to safely verify a token — without a known audience, any Google ID
+    // token issued to *any* Google OAuth client would otherwise be accepted.
+    let (jwks, client_id) = match (state.jwks.current().await, &state.google_client_id) {
+        (Some(jwks), Some(client_id)) => (jwks, client_id.clone()),
+        _ => {
             return (
                 StatusCode::SERVICE_UNAVAILABLE,
                 Json(json!({ "data": null, "error": "Authentication not configured" })),
@@ -71,7 +74,7 @@ pub async fn auth_middleware(
         }
     };
 
-    match verify_jwt(&token, &jwks) {
+    match verify_jwt(&token, &jwks, &client_id) {
         Ok(user) => {
             req.extensions_mut().insert(user);
             next.run(req).await
@@ -84,7 +87,11 @@ pub async fn auth_middleware(
     }
 }
 
-pub fn verify_jwt(token: &str, jwks: &Arc<jsonwebtoken::jwk::JwkSet>) -> Result<AuthUser, String> {
+pub fn verify_jwt(
+    token: &str,
+    jwks: &jsonwebtoken::jwk::JwkSet,
+    client_id: &str,
+) -> Result<AuthUser, String> {
     let header = decode_header(token).map_err(|e| format!("Invalid token: {e}"))?;
     let kid = header.kid.ok_or_else(|| "Token missing kid".to_string())?;
 
@@ -98,11 +105,12 @@ pub fn verify_jwt(token: &str, jwks: &Arc<jsonwebtoken::jwk::JwkSet>) -> Result<
 
     let mut validation = Validation::new(Algorithm::RS256);
     validation.validate_exp = true;
+    validation.set_audience(&[client_id]);
 
-    let token_data = decode::<ClerkClaims>(token, &decoding_key, &validation)
+    let token_data = decode::<GoogleClaims>(token, &decoding_key, &validation)
         .map_err(|e| format!("Token verification failed: {e}"))?;
 
     Ok(AuthUser {
-        clerk_user_id: token_data.claims.sub,
+        google_user_id: token_data.claims.sub,
     })
 }

@@ -112,7 +112,7 @@ class _SignOutButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
-    if (auth.mode != AuthMode.clerk) return const SizedBox.shrink();
+    if (auth.mode != AuthMode.google) return const SizedBox.shrink();
     return IconButton(
       tooltip: 'Sign out',
       icon: const Icon(Icons.logout),

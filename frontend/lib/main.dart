@@ -1,11 +1,8 @@
-import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/analytics/analytics.dart';
 import 'core/analytics/consent_gate.dart';
-import 'core/config/app_config.dart';
-import 'features/auth/clerk_bridge.dart';
 import 'router.dart';
 import 'shared/theme/app_theme.dart';
 
@@ -22,7 +19,7 @@ class PrereqApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
-    final app = MaterialApp.router(
+    return MaterialApp.router(
       title: 'Prereq',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
@@ -32,17 +29,5 @@ class PrereqApp extends ConsumerWidget {
       builder: (context, child) =>
           ConsentGate(child: child ?? const SizedBox.shrink()),
     );
-
-    // Only mount Clerk when a publishable key is configured; otherwise the
-    // auth provider handles dev-bypass / unconfigured modes on its own.
-    if (AppConfig.authMode == AuthMode.clerk) {
-      return ClerkAuth(
-        config: ClerkAuthConfig(
-          publishableKey: AppConfig.clerkPublishableKey,
-        ),
-        child: ClerkBridge(child: app),
-      );
-    }
-    return app;
   }
 }

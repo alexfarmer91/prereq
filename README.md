@@ -5,7 +5,7 @@ Prediction-market analytics SaaS: find edge, size positions (Kelly), and track c
 ## Repo layout
 
 - `backend/` — Rust + Axum API server (SQLx/Postgres, Redis-or-memory cache, Claude scoring, WebSocket)
-- `frontend/` — Flutter app (web/iOS/Android; Riverpod, go_router, Clerk auth, fl_chart)
+- `frontend/` — Flutter app (web/iOS/Android; Riverpod, go_router, Google Sign-In, fl_chart)
 
 ## Running locally (no external accounts needed)
 
@@ -15,10 +15,10 @@ The backend degrades gracefully: without a database it serves live Kalshi market
 # Backend — http://localhost:3000
 cd backend
 copy .env.example .env
-# In .env set: SKIP_AUTH=true            (dev only — bypasses Clerk JWT)
+# In .env set: SKIP_AUTH=true            (dev only — bypasses the ID token check)
 cargo run
 
-# Frontend (web) — talks to the local backend, skips Clerk
+# Frontend (web) — talks to the local backend, skips sign-in
 cd frontend
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000 --dart-define=DEV_AUTH_BYPASS=true
 ```
@@ -32,7 +32,7 @@ cd frontend && flutter analyze && flutter test
 
 ## API summary
 
-All responses use the `{ "data": ..., "error": null }` envelope. Prices are dollars; timestamps are UTC ISO-8601. Everything except `/health` requires `Authorization: Bearer <Clerk JWT>` (the WebSocket takes `?token=`).
+All responses use the `{ "data": ..., "error": null }` envelope. Prices are dollars; timestamps are UTC ISO-8601. Everything except `/health` requires `Authorization: Bearer <Google ID token>` (the WebSocket takes `?token=`).
 
 ```
 GET    /health
@@ -51,13 +51,13 @@ WS     /ws/markets?token=                          live prices for subscribed ti
 
 Everything below requires accounts/credentials or judgment a developer can't supply — the code paths are already built and verified around them.
 
-1. **Clerk** — create the application, then:
-   - backend `.env`: `CLERK_JWKS_URL=https://<your-clerk-domain>/.well-known/jwks.json`, set `SKIP_AUTH=false`
-   - frontend run/build: `--dart-define=CLERK_PUBLISHABLE_KEY=pk_...`
+1. **Google Sign-In** — create an OAuth 2.0 Client ID (type: **Web application**) in Google Cloud Console. Register an Authorized JavaScript origin for every place the frontend runs from (e.g. `http://localhost:8765` for the pinned local dev port, plus the deployed frontend's origin). Then:
+   - backend `.env`: `GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com`, set `SKIP_AUTH=false`
+   - frontend run/build: `--dart-define=GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com` (same value)
 2. **Supabase (Postgres)** — create a project and put its connection string in `DATABASE_URL`. Migrations in `backend/migrations/` run automatically at boot.
 3. **Redis** (optional for single-instance UAT) — provision and set `REDIS_URL`. Without it the in-process cache is used; scores re-generate on restart.
 4. **Anthropic** — set `ANTHROPIC_API_KEY` to enable AI scoring (top 30 most liquid markets per 5-minute refresh, cached 30 min). Watch spend during UAT.
-5. **Deploy** — host the backend (any container host; it's a single binary listening on `PORT`) and point the frontend at it via `--dart-define=API_BASE_URL=...`. `flutter build web` for the web bundle; App/Play Store publishing when ready.
-6. **UAT itself** — sign up through Clerk, browse the scanner, open a detail view, add to watchlist, log a bet via the Kelly sizer, resolve it, and confirm it appears on the performance dashboard.
+5. **Deploy** — the backend is live on Railway at `https://prereq-production-7bb8.up.railway.app`. Point the frontend at it with `--dart-define=API_BASE_URL=https://prereq-production-7bb8.up.railway.app` (or run `frontend/run_railway.sh`, which also sets `GOOGLE_CLIENT_ID` — that backend runs with `SKIP_AUTH=false`, so `DEV_AUTH_BYPASS` won't work against it). `flutter build web` for the web bundle; App/Play Store publishing when ready.
+6. **UAT itself** — sign in with Google, browse the scanner, open a detail view, add to watchlist, log a bet via the Kelly sizer, resolve it, and confirm it appears on the performance dashboard.
 
 Known MVP limits (deliberate, per spec): arb matching uses title similarity (heuristic, may miss/false-positive pairs); watchlist alert thresholds are stored but push notifications are not wired; order execution on Kalshi is out of scope.

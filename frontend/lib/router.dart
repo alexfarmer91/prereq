@@ -30,8 +30,8 @@ GoRouter router(Ref ref) {
 
       switch (auth.status) {
         case AuthStatus.initializing:
-          // Clerk is restoring the session; stay put (login screen renders
-          // Clerk UI which handles its own loading state).
+          // Google Sign-In is restoring the session; stay put (login screen
+          // renders the sign-in button, which handles its own loading state).
           return onLogin ? null : '/login';
         case AuthStatus.signedOut:
         case AuthStatus.unconfigured:
