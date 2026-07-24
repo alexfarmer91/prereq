@@ -127,9 +127,15 @@ async fn score_market(
             .json(&body)
             .send()
             .await
-            .map_err(|e| AppError::Internal(format!("Anthropic request failed: {e}")))?
-            .error_for_status()
-            .map_err(|e| AppError::Internal(format!("Anthropic returned error: {e}")))?;
+            .map_err(|e| AppError::Internal(format!("Anthropic request failed: {e}")))?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let body = response.text().await.unwrap_or_default();
+            return Err(AppError::Internal(format!(
+                "Anthropic returned {status}: {body}"
+            )));
+        }
 
         let payload: AnthropicResponse = response
             .json()
@@ -163,8 +169,13 @@ async fn score_market(
         .collect::<Vec<_>>()
         .join("");
 
-    let mut score = parse_score(&text)
-        .ok_or_else(|| AppError::Internal(format!("Unparseable score for {}", market.ticker)))?;
+    let mut score = parse_score(&text).ok_or_else(|| {
+        let preview: String = text.chars().take(500).collect();
+        AppError::Internal(format!(
+            "Unparseable score for {}: {preview:?}",
+            market.ticker
+        ))
+    })?;
 
     // Edge is deterministic given the model's fair probability — don't trust
     // the LLM's arithmetic.
