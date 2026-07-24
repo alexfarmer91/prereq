@@ -191,6 +191,13 @@ async fn score_market(
 }
 
 fn build_prompt(market: &Market) -> String {
+    let research_instruction = if web_search_enabled() {
+        "If recent news could change your estimate, use web search to check \
+         before scoring."
+    } else {
+        "Web search is not available for this request — score from the \
+         information given."
+    };
     format!(
         r#"You are a prediction market analyst. Score this market.
 
@@ -200,8 +207,7 @@ Current yes price: ${yes_bid:.2} bid / ${yes_ask:.2} ask
 24h volume: ${volume:.2}
 Closes: {close}
 
-If recent news could change your estimate, use web search to check before
-scoring. Your final message must be ONLY valid JSON:
+{research_instruction} Respond with ONLY valid JSON, no other text:
 {{
   "fair_probability": 0.00,
   "confidence": "low|medium|high",
