@@ -1,5 +1,8 @@
 GET_STARTED.md
 
+# macOS
+.DS_Store
+
 # Claude Code internal state
 .claude/
 
