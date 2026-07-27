@@ -13,7 +13,7 @@ pub async fn get_performance(
     Extension(user): Extension<AuthUser>,
 ) -> Result<Json<ApiResponse<PerformanceReport>>, AppError> {
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.clerk_user_id).await?;
+    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
     let resolved = db::bets::resolved(pool, me.id).await?;
     Ok(Json(ApiResponse::ok(db::performance::build_report(
         &resolved,

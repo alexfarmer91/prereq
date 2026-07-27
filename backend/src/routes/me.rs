@@ -14,7 +14,7 @@ pub async fn get_me(
     Extension(user): Extension<AuthUser>,
 ) -> Result<Json<ApiResponse<User>>, AppError> {
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.clerk_user_id).await?;
+    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
     Ok(Json(ApiResponse::ok(me)))
 }
 
@@ -34,7 +34,7 @@ pub async fn update_me(
         ));
     }
     let pool = db::require(&state.db)?;
-    db::users::get_or_create(pool, &user.clerk_user_id).await?;
-    let me = db::users::update_bankroll(pool, &user.clerk_user_id, body.bankroll_dollars).await?;
+    db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::update_bankroll(pool, &user.google_user_id, body.bankroll_dollars).await?;
     Ok(Json(ApiResponse::ok(me)))
 }

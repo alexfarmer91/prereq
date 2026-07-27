@@ -1,13 +1,15 @@
 /// How the app authenticates the user.
 enum AuthMode {
-  /// Clerk is configured; real login/signup and Bearer tokens.
-  clerk,
+  /// A Google OAuth client ID is configured; real Google sign-in and Bearer
+  /// tokens (Google ID tokens).
+  google,
 
-  /// No Clerk key, but DEV_AUTH_BYPASS=true; act as signed in (backend runs
-  /// with SKIP_AUTH=true).
+  /// No Google client ID, but DEV_AUTH_BYPASS=true; act as signed in
+  /// (backend runs with SKIP_AUTH=true).
   devBypass,
 
-  /// No Clerk key and no bypass; show a setup notice on the login screen.
+  /// No Google client ID and no bypass; show a setup notice on the login
+  /// screen.
   unconfigured,
 }
 
@@ -18,9 +20,20 @@ abstract final class AppConfig {
     defaultValue: 'http://localhost:3000',
   );
 
-  static const String clerkPublishableKey = String.fromEnvironment(
-    'CLERK_PUBLISHABLE_KEY',
+  /// The Google Cloud "Web application" OAuth 2.0 Client ID. Used directly
+  /// as `clientId` on web, and as `serverClientId` on native platforms so
+  /// the resulting ID token's `aud` claim is the same value everywhere the
+  /// backend can verify against.
+  static const String googleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
     defaultValue: '',
+  );
+
+  /// Mixpanel project token (a public client-side identifier, not a secret).
+  /// Pass `--dart-define=MIXPANEL_TOKEN=` (empty) to disable tracking.
+  static const String mixpanelToken = String.fromEnvironment(
+    'MIXPANEL_TOKEN',
+    defaultValue: '73950bce8310f42d2fbcebeb8569b32c',
   );
 
   static const String _devAuthBypass = String.fromEnvironment(
@@ -31,7 +44,7 @@ abstract final class AppConfig {
   static bool get devAuthBypass => _devAuthBypass.toLowerCase() == 'true';
 
   static AuthMode get authMode {
-    if (clerkPublishableKey.isNotEmpty) return AuthMode.clerk;
+    if (googleClientId.isNotEmpty) return AuthMode.google;
     if (devAuthBypass) return AuthMode.devBypass;
     return AuthMode.unconfigured;
   }

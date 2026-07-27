@@ -40,7 +40,8 @@ pub async fn ws_markets(
     ws: WebSocketUpgrade,
 ) -> Response {
     if !auth::skip_auth() {
-        let Some(jwks) = state.jwks.clone() else {
+        let (Some(jwks), Some(client_id)) = (state.jwks.current().await, &state.google_client_id)
+        else {
             return (
                 StatusCode::SERVICE_UNAVAILABLE,
                 Json(json!({ "data": null, "error": "Authentication not configured" })),
@@ -54,7 +55,7 @@ pub async fn ws_markets(
             )
                 .into_response();
         };
-        if let Err(msg) = auth::verify_jwt(&token, &jwks) {
+        if let Err(msg) = auth::verify_jwt(&token, &jwks, client_id) {
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(json!({ "data": null, "error": msg })),

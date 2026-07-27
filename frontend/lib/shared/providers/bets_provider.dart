@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../core/analytics/analytics.dart';
 import '../models/bet.dart';
 import 'api_client_provider.dart';
 import 'performance_provider.dart';
@@ -42,6 +43,15 @@ class BetActions extends _$BetActions {
           yourProbability: yourProbability,
           kellyFraction: kellyFraction,
         );
+    Analytics.track('bet_logged', {
+      'market_ticker': marketTicker,
+      'side': side.name,
+      'contracts': contracts,
+      'entry_price_dollars': entryPriceDollars,
+      'stake_dollars': entryPriceDollars * contracts,
+      'your_probability': yourProbability,
+      'kelly_fraction': ?kellyFraction,
+    });
     _invalidate();
     return bet;
   }
@@ -56,6 +66,11 @@ class BetActions extends _$BetActions {
           outcome: outcome,
           exitPriceDollars: exitPriceDollars,
         );
+    Analytics.track('bet_resolved', {
+      'market_ticker': bet.marketTicker,
+      'outcome': outcome.name,
+      'exit_price_dollars': exitPriceDollars,
+    });
     _invalidate();
     return bet;
   }

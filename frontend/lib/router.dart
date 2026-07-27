@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'core/analytics/analytics.dart';
 import 'features/auth/login_screen.dart';
 import 'features/market_detail/market_detail_screen.dart';
 import 'features/performance/performance_screen.dart';
@@ -20,7 +21,7 @@ GoRouter router(Ref ref) {
   ref.listen(authControllerProvider, (_, _) => refresh.value++);
   ref.onDispose(refresh.dispose);
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/scanner',
     refreshListenable: refresh,
     redirect: (context, state) {
@@ -29,8 +30,8 @@ GoRouter router(Ref ref) {
 
       switch (auth.status) {
         case AuthStatus.initializing:
-          // Clerk is restoring the session; stay put (login screen renders
-          // Clerk UI which handles its own loading state).
+          // Google Sign-In is restoring the session; stay put (login screen
+          // renders the sign-in button, which handles its own loading state).
           return onLogin ? null : '/login';
         case AuthStatus.signedOut:
         case AuthStatus.unconfigured:
@@ -83,4 +84,26 @@ GoRouter router(Ref ref) {
       ),
     ],
   );
+
+  // Central screen tracking: one `screen_viewed` per location change, with
+  // dynamic segments (the market ticker) kept out of the screen name.
+  String? lastTrackedPath;
+  void trackScreen() {
+    final uri = router.routerDelegate.currentConfiguration.uri;
+    if (uri.path == lastTrackedPath) return;
+    lastTrackedPath = uri.path;
+    final segments = uri.pathSegments;
+    final isMarket = segments.isNotEmpty && segments.first == 'market';
+    Analytics.track('screen_viewed', {
+      'screen': isMarket
+          ? 'market_detail'
+          : (segments.isEmpty ? 'root' : segments.first),
+      if (isMarket && segments.length > 1) 'market_ticker': segments[1],
+    });
+  }
+
+  router.routerDelegate.addListener(trackScreen);
+  ref.onDispose(() => router.routerDelegate.removeListener(trackScreen));
+
+  return router;
 }

@@ -1,6 +1,8 @@
-import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in_web/web_only.dart' as gsi_web;
 
 import '../../core/config/app_config.dart';
 import '../../shared/providers/auth_provider.dart';
@@ -8,7 +10,7 @@ import '../../shared/theme/app_theme.dart';
 
 /// Login/signup screen.
 ///
-/// - Clerk mode: renders Clerk's prebuilt authentication component.
+/// - Google mode: renders a Google sign-in button.
 /// - Unconfigured: shows a clear setup notice (never crashes).
 /// - Dev bypass: users never land here (router redirects), but shows a note
 ///   just in case.
@@ -31,7 +33,7 @@ class LoginScreen extends ConsumerWidget {
                 const _Brand(),
                 const SizedBox(height: 32),
                 switch (auth.mode) {
-                  AuthMode.clerk => const _ClerkPanel(),
+                  AuthMode.google => const _GoogleSignInPanel(),
                   AuthMode.unconfigured => const _SetupNotice(),
                   AuthMode.devBypass => const Text(
                       'Dev auth bypass is active — you are signed in.'),
@@ -76,15 +78,43 @@ class _Brand extends StatelessWidget {
   }
 }
 
-class _ClerkPanel extends StatelessWidget {
-  const _ClerkPanel();
+class _GoogleSignInPanel extends StatelessWidget {
+  const _GoogleSignInPanel();
+
+  Future<void> _signIn(BuildContext context) async {
+    try {
+      await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException catch (e) {
+      if (context.mounted && e.code != GoogleSignInExceptionCode.canceled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign-in failed: ${e.description ?? e.code}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
+    return Card(
       child: Padding(
-        padding: EdgeInsets.all(8),
-        child: ClerkErrorListener(child: ClerkAuthentication()),
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          // supportsAuthenticate() is false on web — GIS requires its own
+          // rendered button there rather than an app-triggered popup.
+          child: kIsWeb
+              ? gsi_web.renderButton(
+                  configuration: gsi_web.GSIButtonConfiguration(
+                    theme: gsi_web.GSIButtonTheme.filledBlack,
+                    size: gsi_web.GSIButtonSize.large,
+                    text: gsi_web.GSIButtonText.signinWith,
+                  ),
+                )
+              : ElevatedButton.icon(
+                  onPressed: () => _signIn(context),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Sign in with Google'),
+                ),
+        ),
       ),
     );
   }
@@ -106,14 +136,15 @@ class _SetupNotice extends StatelessWidget {
               children: [
                 const Icon(Icons.key_off, color: AppColors.amber),
                 const SizedBox(width: 8),
-                Text('Clerk not configured',
+                Text('Sign-in not configured',
                     style: theme.textTheme.titleMedium),
               ],
             ),
             const SizedBox(height: 12),
             const Text(
               'Authentication is not set up for this build. To enable '
-              'sign-in, provide your Clerk publishable key at build time:',
+              'sign-in, provide your Google OAuth Web Client ID at build '
+              'time:',
             ),
             const SizedBox(height: 12),
             Container(
@@ -125,7 +156,7 @@ class _SetupNotice extends StatelessWidget {
               ),
               child: const Text(
                 'flutter run \\\n'
-                '  --dart-define=CLERK_PUBLISHABLE_KEY=pk_...',
+                '  --dart-define=GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com',
                 style: TextStyle(fontFamily: 'monospace', fontSize: 12),
               ),
             ),

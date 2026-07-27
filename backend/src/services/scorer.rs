@@ -1,85 +1,205 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use chrono::Utc;
-use reqwest::Client;
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::error::AppError;
 use crate::models::market::{Market, Score};
-use crate::services::cache::Cache;
+use crate::AppState;
 
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
-const MODEL: &str = "claude-sonnet-4-20250514";
+// claude-sonnet-4-20250514 is deprecated (retires 2026-06-15); Sonnet 5 is
+// its documented drop-in replacement and supports the web_search tool.
+const MODEL: &str = "claude-sonnet-5";
 const SCORE_TTL: Duration = Duration::from_secs(30 * 60);
+/// Cost cap: web searches allowed per scored market.
+const MAX_SEARCHES_PER_SCORE: u32 = 3;
+/// Server-side tool turns can pause (`stop_reason: "pause_turn"`); resume at
+/// most this many times before treating the turn as final.
+const MAX_CONTINUATIONS: u32 = 5;
+
+/// Web search is opt-in (SCORER_WEB_SEARCH=true) for the automated scorer.
+/// The product direction is user-triggered research on paid plans; automated
+/// background scoring stays cheap and search-free by default. Read per call,
+/// matching the `middleware::auth::skip_auth` pattern.
+fn web_search_enabled() -> bool {
+    std::env::var("SCORER_WEB_SEARCH").as_deref() == Ok("true")
+}
 
 /// Score with cache-aside: Redis/memory first, Claude on miss.
 pub async fn get_or_score(
-    http: &Client,
+    state: &AppState,
     api_key: &str,
-    cache: &Cache,
     market: &Market,
 ) -> Result<Score, AppError> {
     let key = format!("score:{}", market.ticker);
 
-    if let Some(cached) = cache.get(&key).await {
+    if let Some(cached) = state.cache.get(&key).await {
         if let Ok(score) = serde_json::from_str::<Score>(&cached) {
             return Ok(score);
         }
     }
 
-    let score = score_market(http, api_key, market).await?;
+    let started = Instant::now();
+    let result = score_market(state, api_key, market).await;
+    track_scored(state, market, &result, started.elapsed().as_millis() as u64);
+
+    let score = result?.score;
     if let Ok(serialized) = serde_json::to_string(&score) {
-        cache.set(&key, &serialized, SCORE_TTL).await;
+        state.cache.set(&key, &serialized, SCORE_TTL).await;
     }
     Ok(score)
 }
 
-async fn score_market(http: &Client, api_key: &str, market: &Market) -> Result<Score, AppError> {
-    let prompt = build_prompt(market);
+/// A completed scoring run plus the usage it consumed (for telemetry).
+struct ScoreOutcome {
+    score: Score,
+    input_tokens: u64,
+    output_tokens: u64,
+    web_searches: u64,
+    round_trips: u32,
+}
 
-    let body = json!({
+fn track_scored(
+    state: &AppState,
+    market: &Market,
+    result: &Result<ScoreOutcome, AppError>,
+    duration_ms: u64,
+) {
+    let mut props = json!({
+        "market_ticker": market.ticker,
+        "market_title": market.title,
+        "market_category": market.category.to_lowercase(),
         "model": MODEL,
-        "max_tokens": 1024,
-        "messages": [{ "role": "user", "content": prompt }],
+        "web_search_enabled": web_search_enabled(),
+        "duration_ms": duration_ms,
+        "succeeded": result.is_ok(),
     });
+    match result {
+        Ok(outcome) => {
+            props["input_tokens"] = json!(outcome.input_tokens);
+            props["output_tokens"] = json!(outcome.output_tokens);
+            props["web_search_count"] = json!(outcome.web_searches);
+            props["api_round_trips"] = json!(outcome.round_trips);
+            props["fair_probability"] = json!(outcome.score.fair_probability);
+            props["edge"] = json!(outcome.score.edge);
+            props["confidence"] = json!(outcome.score.confidence);
+        }
+        Err(e) => {
+            props["error"] = json!(e.to_string().chars().take(200).collect::<String>());
+        }
+    }
+    state.telemetry.track("market_scored", props);
+}
 
-    let response = http
-        .post(ANTHROPIC_URL)
-        .header("x-api-key", api_key)
-        .header("anthropic-version", "2023-06-01")
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| AppError::Internal(format!("Anthropic request failed: {e}")))?
-        .error_for_status()
-        .map_err(|e| AppError::Internal(format!("Anthropic returned error: {e}")))?;
+async fn score_market(
+    state: &AppState,
+    api_key: &str,
+    market: &Market,
+) -> Result<ScoreOutcome, AppError> {
+    let mut messages = vec![json!({ "role": "user", "content": build_prompt(market) })];
+    let mut input_tokens = 0u64;
+    let mut output_tokens = 0u64;
+    let mut web_searches = 0u64;
+    let mut round_trips = 0u32;
 
-    let payload: AnthropicResponse = response
-        .json()
-        .await
-        .map_err(|e| AppError::Internal(format!("Anthropic response parse error: {e}")))?;
+    let payload = loop {
+        round_trips += 1;
+        let mut body = json!({
+            "model": MODEL,
+            "max_tokens": 4096,
+            "messages": messages,
+        });
+        if web_search_enabled() {
+            body["tools"] = json!([{
+                "type": "web_search_20260209",
+                "name": "web_search",
+                "max_uses": MAX_SEARCHES_PER_SCORE,
+            }]);
+        }
+
+        let response = state
+            .http
+            .post(ANTHROPIC_URL)
+            .header("x-api-key", api_key)
+            .header("anthropic-version", "2023-06-01")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Anthropic request failed: {e}")))?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let body = response.text().await.unwrap_or_default();
+            return Err(AppError::Internal(format!(
+                "Anthropic returned {status}: {body}"
+            )));
+        }
+
+        let payload: AnthropicResponse = response
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Anthropic response parse error: {e}")))?;
+
+        input_tokens += payload.usage.input_tokens
+            + payload.usage.cache_creation_input_tokens
+            + payload.usage.cache_read_input_tokens;
+        output_tokens += payload.usage.output_tokens;
+        if let Some(server_tools) = &payload.usage.server_tool_use {
+            web_searches += server_tools.web_search_requests;
+        }
+
+        // The server-side search loop pauses after its iteration limit; echo
+        // the assistant turn back unchanged and it resumes where it left off.
+        if payload.stop_reason.as_deref() == Some("pause_turn")
+            && round_trips <= MAX_CONTINUATIONS
+        {
+            messages.push(json!({ "role": "assistant", "content": payload.content }));
+            continue;
+        }
+        break payload;
+    };
 
     let text = payload
         .content
         .iter()
-        .filter_map(|block| block.text.as_deref())
+        .filter(|block| block.get("type").and_then(Value::as_str) == Some("text"))
+        .filter_map(|block| block.get("text").and_then(Value::as_str))
         .collect::<Vec<_>>()
         .join("");
 
-    let mut score = parse_score(&text)
-        .ok_or_else(|| AppError::Internal(format!("Unparseable score for {}", market.ticker)))?;
+    let mut score = parse_score(&text).ok_or_else(|| {
+        let preview: String = text.chars().take(500).collect();
+        AppError::Internal(format!(
+            "Unparseable score for {}: {preview:?}",
+            market.ticker
+        ))
+    })?;
 
     // Edge is deterministic given the model's fair probability — don't trust
     // the LLM's arithmetic.
     score.edge = score.fair_probability - market.mid_price;
     score.scored_at = Utc::now();
-    Ok(score)
+    Ok(ScoreOutcome {
+        score,
+        input_tokens,
+        output_tokens,
+        web_searches,
+        round_trips,
+    })
 }
 
 fn build_prompt(market: &Market) -> String {
+    let research_instruction = if web_search_enabled() {
+        "If recent news could change your estimate, use web search to check \
+         before scoring."
+    } else {
+        "Web search is not available for this request — score from the \
+         information given."
+    };
     format!(
-        r#"You are a prediction market analyst. Score this market and return ONLY valid JSON.
+        r#"You are a prediction market analyst. Score this market.
 
 Market: {title}
 Resolution rules: {rules}
@@ -87,7 +207,7 @@ Current yes price: ${yes_bid:.2} bid / ${yes_ask:.2} ask
 24h volume: ${volume:.2}
 Closes: {close}
 
-Return JSON:
+{research_instruction} Respond with ONLY valid JSON, no other text:
 {{
   "fair_probability": 0.00,
   "confidence": "low|medium|high",
@@ -119,13 +239,33 @@ pub fn parse_score(text: &str) -> Option<Score> {
 
 #[derive(Debug, Deserialize)]
 struct AnthropicResponse {
-    content: Vec<ContentBlock>,
+    /// Kept as raw JSON: text blocks are read out, and the whole array is
+    /// echoed back verbatim when resuming a paused turn.
+    content: Vec<Value>,
+    #[serde(default)]
+    stop_reason: Option<String>,
+    #[serde(default)]
+    usage: Usage,
 }
 
-#[derive(Debug, Deserialize)]
-struct ContentBlock {
+#[derive(Debug, Default, Deserialize)]
+struct Usage {
     #[serde(default)]
-    text: Option<String>,
+    input_tokens: u64,
+    #[serde(default)]
+    output_tokens: u64,
+    #[serde(default)]
+    cache_creation_input_tokens: u64,
+    #[serde(default)]
+    cache_read_input_tokens: u64,
+    #[serde(default)]
+    server_tool_use: Option<ServerToolUsage>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct ServerToolUsage {
+    #[serde(default)]
+    web_search_requests: u64,
 }
 
 #[cfg(test)]
@@ -153,5 +293,37 @@ mod tests {
     fn rejects_garbage() {
         assert!(parse_score("no json here").is_none());
         assert!(parse_score("{not valid}").is_none());
+    }
+
+    #[test]
+    fn reads_usage_and_text_from_response_json() {
+        let raw = r#"{
+            "content": [
+                {"type": "server_tool_use", "id": "srvtoolu_1", "name": "web_search", "input": {"query": "fed rate cut"}},
+                {"type": "web_search_tool_result", "tool_use_id": "srvtoolu_1", "content": []},
+                {"type": "text", "text": "{\"fair_probability\":0.5}"}
+            ],
+            "stop_reason": "end_turn",
+            "usage": {
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "server_tool_use": {"web_search_requests": 2}
+            }
+        }"#;
+        let payload: AnthropicResponse = serde_json::from_str(raw).expect("should deserialize");
+        assert_eq!(payload.stop_reason.as_deref(), Some("end_turn"));
+        assert_eq!(payload.usage.input_tokens, 100);
+        assert_eq!(
+            payload.usage.server_tool_use.unwrap().web_search_requests,
+            2
+        );
+        let text = payload
+            .content
+            .iter()
+            .filter(|b| b.get("type").and_then(Value::as_str) == Some("text"))
+            .filter_map(|b| b.get("text").and_then(Value::as_str))
+            .collect::<Vec<_>>()
+            .join("");
+        assert_eq!(text, "{\"fair_probability\":0.5}");
     }
 }

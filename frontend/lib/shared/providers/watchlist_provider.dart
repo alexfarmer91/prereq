@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../core/analytics/analytics.dart';
 import '../models/watchlist_item.dart';
 import 'api_client_provider.dart';
 import 'ws_providers.dart';
@@ -23,6 +24,10 @@ class WatchlistController extends _$WatchlistController {
     await ref
         .read(apiClientProvider)
         .addToWatchlist(ticker, alertEdgeThreshold: alertEdgeThreshold);
+    Analytics.track('watchlist_market_added', {
+      'market_ticker': ticker,
+      'has_alert_threshold': alertEdgeThreshold != null,
+    });
     ref.invalidateSelf();
     await future;
   }
@@ -36,6 +41,7 @@ class WatchlistController extends _$WatchlistController {
     }
     try {
       await ref.read(apiClientProvider).removeFromWatchlist(ticker);
+      Analytics.track('watchlist_market_removed', {'market_ticker': ticker});
     } finally {
       ref.invalidateSelf();
     }
