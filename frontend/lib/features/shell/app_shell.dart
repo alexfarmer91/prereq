@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/config/app_config.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../shared/providers/ws_providers.dart';
+import '../../shared/widgets/prereq_mark.dart';
 
 /// Responsive navigation shell: sidebar rail above 900px, bottom nav below.
 /// The Watchlist destination shows a badge whenever live arbs exist.
@@ -38,7 +39,7 @@ class AppShell extends ConsumerWidget {
                   : NavigationRailLabelType.all,
               leading: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                child: Icon(Icons.query_stats, size: 28),
+                child: PrereqMark(size: 28),
               ),
               trailing: Expanded(
                 child: Align(

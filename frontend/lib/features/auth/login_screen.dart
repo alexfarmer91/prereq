@@ -7,6 +7,7 @@ import 'package:google_sign_in_web/web_only.dart' as gsi_web;
 import '../../core/config/app_config.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/prereq_mark.dart';
 
 /// Login/signup screen.
 ///
@@ -55,19 +56,8 @@ class _Brand extends StatelessWidget {
     final theme = Theme.of(context);
     return Column(
       children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.accent),
-          ),
-          child: const Icon(Icons.query_stats, color: AppColors.accent, size: 30),
-        ),
+        const PrereqLockup(markSize: 56, stacked: true),
         const SizedBox(height: 16),
-        Text('Prereq', style: theme.textTheme.headlineMedium),
-        const SizedBox(height: 4),
         Text(
           'Prediction market analytics',
           style: theme.textTheme.bodyMedium
