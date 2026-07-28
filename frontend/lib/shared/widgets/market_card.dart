@@ -4,6 +4,7 @@ import '../models/market.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import 'category_badge.dart';
+import 'confidence_badge.dart';
 
 /// Card used in the scanner and watchlist lists.
 ///
@@ -61,6 +62,10 @@ class MarketCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   CategoryBadge(category: market.category),
+                  if (market.score != null) ...[
+                    const SizedBox(width: 6),
+                    ConfidenceBadge(confidence: market.score!.confidence),
+                  ],
                   if (trailing != null) ...[
                     const SizedBox(width: 4),
                     trailing!,

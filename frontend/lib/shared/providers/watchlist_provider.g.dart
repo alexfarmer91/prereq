@@ -40,7 +40,7 @@ final class WatchlistControllerProvider
 }
 
 String _$watchlistControllerHash() =>
-    r'24017673c28cd44a404342021395f7267e44858b';
+    r'd2d48c7bac71888680f4a7b5e6821780eb2f80b0';
 
 /// The user's watchlist. Whenever it (re)loads, the WebSocket subscription is
 /// updated to exactly the watched tickers so live prices flow only for them.

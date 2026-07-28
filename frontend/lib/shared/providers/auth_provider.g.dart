@@ -10,9 +10,9 @@ part of 'auth_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Single source of truth for session state and token retrieval.
 ///
-/// - Clerk mode: state is driven by [attachClerk] (called by the
-///   `ClerkAuthBridge` widget that sits below the `ClerkAuth` root widget);
-///   `getToken()` returns the current Clerk session JWT.
+/// - Google mode: state is driven by [GoogleSignIn]'s `authenticationEvents`
+///   stream, subscribed once from [build]; `getToken()` returns the current
+///   Google ID token.
 /// - Dev bypass mode: always signed in; `getToken()` returns null so no
 ///   Authorization header is attached (backend runs with SKIP_AUTH=true).
 /// - Unconfigured: signed out forever; login screen explains setup.
@@ -22,9 +22,9 @@ final authControllerProvider = AuthControllerProvider._();
 
 /// Single source of truth for session state and token retrieval.
 ///
-/// - Clerk mode: state is driven by [attachClerk] (called by the
-///   `ClerkAuthBridge` widget that sits below the `ClerkAuth` root widget);
-///   `getToken()` returns the current Clerk session JWT.
+/// - Google mode: state is driven by [GoogleSignIn]'s `authenticationEvents`
+///   stream, subscribed once from [build]; `getToken()` returns the current
+///   Google ID token.
 /// - Dev bypass mode: always signed in; `getToken()` returns null so no
 ///   Authorization header is attached (backend runs with SKIP_AUTH=true).
 /// - Unconfigured: signed out forever; login screen explains setup.
@@ -32,9 +32,9 @@ final class AuthControllerProvider
     extends $NotifierProvider<AuthController, AuthState> {
   /// Single source of truth for session state and token retrieval.
   ///
-  /// - Clerk mode: state is driven by [attachClerk] (called by the
-  ///   `ClerkAuthBridge` widget that sits below the `ClerkAuth` root widget);
-  ///   `getToken()` returns the current Clerk session JWT.
+  /// - Google mode: state is driven by [GoogleSignIn]'s `authenticationEvents`
+  ///   stream, subscribed once from [build]; `getToken()` returns the current
+  ///   Google ID token.
   /// - Dev bypass mode: always signed in; `getToken()` returns null so no
   ///   Authorization header is attached (backend runs with SKIP_AUTH=true).
   /// - Unconfigured: signed out forever; login screen explains setup.
@@ -65,13 +65,13 @@ final class AuthControllerProvider
   }
 }
 
-String _$authControllerHash() => r'bf24e79a208fade22bb6911aca7972f1488d7707';
+String _$authControllerHash() => r'c6c9d4c84a3a8f54a522e4a2492008f2a2949dcd';
 
 /// Single source of truth for session state and token retrieval.
 ///
-/// - Clerk mode: state is driven by [attachClerk] (called by the
-///   `ClerkAuthBridge` widget that sits below the `ClerkAuth` root widget);
-///   `getToken()` returns the current Clerk session JWT.
+/// - Google mode: state is driven by [GoogleSignIn]'s `authenticationEvents`
+///   stream, subscribed once from [build]; `getToken()` returns the current
+///   Google ID token.
 /// - Dev bypass mode: always signed in; `getToken()` returns null so no
 ///   Authorization header is attached (backend runs with SKIP_AUTH=true).
 /// - Unconfigured: signed out forever; login screen explains setup.

@@ -15,19 +15,42 @@ class ScannerScreen extends ConsumerStatefulWidget {
   ConsumerState<ScannerScreen> createState() => _ScannerScreenState();
 }
 
+/// Horizon filter options shown in the app bar. `null` means no cap (today's
+/// default — every market regardless of how far out it closes).
+const _horizonOptions = <int?>[null, 7, 30, 90, 365];
+
+String _horizonLabel(int? days) => days == null ? 'Any' : '≤ ${days}d';
+
 class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   String? _category;
   MarketSort _sort = MarketSort.edge;
+  int? _maxDaysToClose;
 
   @override
   Widget build(BuildContext context) {
-    final markets =
-        ref.watch(marketsProvider(category: _category, sort: _sort));
+    final markets = ref.watch(marketsProvider(
+      category: _category,
+      sort: _sort,
+      maxDaysToClose: _maxDaysToClose,
+    ));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scanner'),
         actions: [
+          PopupMenuButton<int?>(
+            tooltip: 'Closing within',
+            icon: const Icon(Icons.hourglass_bottom_outlined),
+            initialValue: _maxDaysToClose,
+            onSelected: (value) => setState(() => _maxDaysToClose = value),
+            itemBuilder: (context) => [
+              for (final days in _horizonOptions)
+                PopupMenuItem(
+                  value: days,
+                  child: Text('Closing within: ${_horizonLabel(days)}'),
+                ),
+            ],
+          ),
           PopupMenuButton<MarketSort>(
             tooltip: 'Sort',
             icon: const Icon(Icons.sort),
@@ -36,6 +59,9 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             itemBuilder: (context) => const [
               PopupMenuItem(
                   value: MarketSort.edge, child: Text('Sort by edge')),
+              PopupMenuItem(
+                  value: MarketSort.confidence,
+                  child: Text('Sort by confidence')),
               PopupMenuItem(
                   value: MarketSort.volume, child: Text('Sort by volume')),
               PopupMenuItem(
@@ -67,7 +93,11 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.refresh(
-                marketsProvider(category: _category, sort: _sort).future,
+                marketsProvider(
+                  category: _category,
+                  sort: _sort,
+                  maxDaysToClose: _maxDaysToClose,
+                ).future,
               ),
               child: switch (markets) {
                 AsyncData(:final value) when value.isEmpty =>
@@ -94,8 +124,11 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                   ),
                 AsyncError(:final error) => _scrollable(ErrorView(
                     message: '$error',
-                    onRetry: () => ref.invalidate(
-                        marketsProvider(category: _category, sort: _sort)),
+                    onRetry: () => ref.invalidate(marketsProvider(
+                      category: _category,
+                      sort: _sort,
+                      maxDaysToClose: _maxDaysToClose,
+                    )),
                   )),
                 _ => const LoadingView(),
               },

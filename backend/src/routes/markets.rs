@@ -18,6 +18,9 @@ use crate::{
 pub struct MarketsQuery {
     pub category: Option<String>,
     pub sort: Option<String>,
+    /// Edge-tier horizon filter — drop markets closing further out than this
+    /// many days. `None`/absent means no cap (today's behavior, unchanged).
+    pub max_days_to_close: Option<i64>,
 }
 
 pub async fn list_markets(
@@ -35,12 +38,22 @@ pub async fn list_markets(
         markets.retain(|m| m.category.eq_ignore_ascii_case(cat));
     }
 
+    if let Some(max_days) = params.max_days_to_close {
+        let cutoff = chrono::Utc::now() + chrono::Duration::days(max_days);
+        markets.retain(|m| {
+            chrono::DateTime::parse_from_rfc3339(&m.close_time)
+                .map(|t| t < cutoff)
+                .unwrap_or(true)
+        });
+    }
+
     sort_markets(&mut markets, params.sort.as_deref().unwrap_or("edge"));
     Ok(Json(ApiResponse::ok(markets)))
 }
 
 /// edge: highest AI edge first (unscored last) · volume: 24h volume ·
-/// close: soonest close first.
+/// close: soonest close first · confidence: high before medium before low
+/// (unscored last).
 fn sort_markets(markets: &mut [Market], sort: &str) {
     match sort {
         "volume" => markets.sort_by(|a, b| {
@@ -49,6 +62,15 @@ fn sort_markets(markets: &mut [Market], sort: &str) {
                 .unwrap_or(std::cmp::Ordering::Equal)
         }),
         "close" => markets.sort_by(|a, b| a.close_time.cmp(&b.close_time)),
+        "confidence" => markets.sort_by(|a, b| {
+            let rank = |m: &Market| match m.score.as_ref().map(|s| s.confidence.as_str()) {
+                Some("high") => 2,
+                Some("medium") => 1,
+                Some("low") => 0,
+                _ => -1,
+            };
+            rank(b).cmp(&rank(a))
+        }),
         _ => markets.sort_by(|a, b| {
             let edge = |m: &Market| m.score.as_ref().map(|s| s.edge.abs());
             match (edge(a), edge(b)) {
@@ -125,4 +147,52 @@ pub async fn get_history(
     };
     let history = kalshi::fetch_history(&state.http, &ticker, &event_ticker).await;
     Ok(Json(ApiResponse::ok(history)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::market::Score;
+    use chrono::Utc;
+
+    fn market(ticker: &str, confidence: Option<&str>) -> Market {
+        Market {
+            ticker: ticker.into(),
+            event_ticker: ticker.into(),
+            title: ticker.into(),
+            yes_bid: 0.5,
+            yes_ask: 0.55,
+            no_bid: 0.45,
+            no_ask: 0.5,
+            mid_price: 0.525,
+            spread: 0.05,
+            volume_24h: 1000.0,
+            close_time: Utc::now().to_rfc3339(),
+            rules_primary: None,
+            category: "Politics".into(),
+            score: confidence.map(|c| Score {
+                fair_probability: 0.6,
+                confidence: c.into(),
+                edge: 0.05,
+                ev_per_dollar: 0.05,
+                rationale: String::new(),
+                signals: vec![],
+                risks: vec![],
+                scored_at: Utc::now(),
+            }),
+        }
+    }
+
+    #[test]
+    fn confidence_sort_orders_high_medium_low_then_unscored() {
+        let mut markets = vec![
+            market("LOW", Some("low")),
+            market("NONE", None),
+            market("HIGH", Some("high")),
+            market("MED", Some("medium")),
+        ];
+        sort_markets(&mut markets, "confidence");
+        let order: Vec<&str> = markets.iter().map(|m| m.ticker.as_str()).collect();
+        assert_eq!(order, vec!["HIGH", "MED", "LOW", "NONE"]);
+    }
 }

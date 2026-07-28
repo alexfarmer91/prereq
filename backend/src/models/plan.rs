@@ -25,6 +25,12 @@ impl Plan {
         self >= Plan::Edge
     }
 
+    /// Scanner horizon filter (`max_days_to_close`) — not enforced yet; see
+    /// PRODUCT_TIERS.md.
+    pub fn can_filter_by_horizon(self) -> bool {
+        self >= Plan::Edge
+    }
+
     /// User-triggered deep research (web-search scoring).
     pub fn can_research(self) -> bool {
         self >= Plan::Pro
@@ -68,5 +74,9 @@ mod tests {
         assert!(Plan::Pro.can_research());
         assert_eq!(Plan::Pro.research_credits_per_month(), 100);
         assert_eq!(Plan::Free.research_credits_per_month(), 0);
+
+        assert!(!Plan::Free.can_filter_by_horizon());
+        assert!(Plan::Edge.can_filter_by_horizon());
+        assert!(Plan::Pro.can_filter_by_horizon());
     }
 }

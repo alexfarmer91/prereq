@@ -30,7 +30,7 @@ Phase 1 explicitly starts.
 | Tier | Unlocks (per migration comment + `plan.rs`) |
 |---|---|
 | **Free** | Scanner + base AI market scores + watchlist + bet log / calibration |
-| **Edge** | Everything in Free, + arbitrage scanner + arb/watchlist alerts (`can_view_arbs()`) |
+| **Edge** | Everything in Free, + arbitrage scanner + arb/watchlist alerts (`can_view_arbs()`), + scanner horizon filter (`can_filter_by_horizon()`) |
 | **Pro** | Everything in Edge, + user-triggered deep research: on-demand Claude scoring with live web search, metered at 100 runs/month (`can_research()`, `research_credits_per_month()`) |
 
 Notable detail already in the code: `scorer.rs` (lines 22-25) documents the
@@ -59,6 +59,18 @@ alpha.
   billing integration (Stripe web / Apple IAP / Google Play Billing) before
   Phase 1 can enforce anything.
 - No frontend paywall/upgrade UI — not needed until Phase 1.
+
+## Open decision: gate confidence visibility behind signup (resolve before Phase 1)
+
+Confidence (`Score.confidence`, shown on `MarketCard` as of this pass) is
+currently visible to anyone signed in — no `Plan` gate exists for it, unlike
+the horizon filter above. The idea floated: use confidence as a signup hook
+("see medium/high-confidence markets — sign up free to unlock"), which implies
+an access tier *below* Free (anonymous browsing of basic market data, with
+confidence/edge requiring an account) rather than a paid-tier boundary. That's
+a different shape than the existing Free/Edge/Pro model — it needs an actual
+anonymous-access mode designed (what's visible unauthenticated?) before it can
+be wired up. Not done here; flagging so it doesn't get lost.
 
 ## Open decision: Free vs. Edge boundary for arbs (resolve before Phase 1)
 

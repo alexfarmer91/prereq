@@ -127,7 +127,7 @@ final class BetActionsProvider extends $NotifierProvider<BetActions, void> {
   }
 }
 
-String _$betActionsHash() => r'5cf2ae29ad7c192b229e4897da967b41492c9f7a';
+String _$betActionsHash() => r'0717af43865a927cd376b0558ae146fb445a220b';
 
 /// Mutations on the bet log; invalidates dependent views on success.
 

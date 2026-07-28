@@ -16,7 +16,8 @@ import 'api_exception.dart';
 enum MarketSort {
   edge('edge'),
   volume('volume'),
-  close('close');
+  close('close'),
+  confidence('confidence');
 
   const MarketSort(this.queryValue);
   final String queryValue;
@@ -100,10 +101,15 @@ class ApiClient {
 
   // ---------------------------------------------------------------- Markets
 
-  Future<List<Market>> getMarkets({String? category, MarketSort? sort}) async {
+  Future<List<Market>> getMarkets({
+    String? category,
+    MarketSort? sort,
+    int? maxDaysToClose,
+  }) async {
     final data = await _send('GET', '/markets', query: {
       'category': ?category,
       'sort': ?sort?.queryValue,
+      'max_days_to_close': ?maxDaysToClose?.toString(),
     });
     return (data as List<dynamic>)
         .map((e) => Market.fromJson(e as Map<String, dynamic>))

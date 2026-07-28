@@ -18,11 +18,23 @@ pub struct GoogleClaims {
     pub aud: String,
     pub exp: u64,
     pub iat: u64,
+    #[serde(default)]
+    pub email: Option<String>,
+    #[serde(default)]
+    pub email_verified: Option<bool>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub picture: Option<String>,
 }
 
 #[derive(Clone, Debug)]
 pub struct AuthUser {
     pub google_user_id: String,
+    pub email: Option<String>,
+    pub email_verified: bool,
+    pub display_name: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 /// Dev-only escape hatch — never set in production.
@@ -38,6 +50,10 @@ pub async fn auth_middleware(
     if skip_auth() {
         req.extensions_mut().insert(AuthUser {
             google_user_id: "dev".to_string(),
+            email: None,
+            email_verified: false,
+            display_name: None,
+            avatar_url: None,
         });
         return next.run(req).await;
     }
@@ -112,5 +128,9 @@ pub fn verify_jwt(
 
     Ok(AuthUser {
         google_user_id: token_data.claims.sub,
+        email: token_data.claims.email,
+        email_verified: token_data.claims.email_verified.unwrap_or(false),
+        display_name: token_data.claims.name,
+        avatar_url: token_data.claims.picture,
     })
 }

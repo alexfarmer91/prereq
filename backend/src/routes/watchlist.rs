@@ -31,7 +31,7 @@ pub async fn list_watchlist(
     Extension(user): Extension<AuthUser>,
 ) -> Result<Json<ApiResponse<Vec<WatchlistEntry>>>, AppError> {
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::get_or_create(pool, &user).await?;
     let items = db::watchlist::list(pool, me.id).await?;
 
     let mut entries = Vec::with_capacity(items.len());
@@ -72,7 +72,7 @@ pub async fn add_to_watchlist(
     }
 
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::get_or_create(pool, &user).await?;
 
     let market = state.markets.get(&body.ticker).await;
     let edge_at_add = market
@@ -105,7 +105,7 @@ pub async fn remove_from_watchlist(
     Path(ticker): Path<String>,
 ) -> Result<Json<ApiResponse<&'static str>>, AppError> {
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::get_or_create(pool, &user).await?;
     db::watchlist::remove(pool, me.id, &ticker).await?;
     Ok(Json(ApiResponse::ok("removed")))
 }
