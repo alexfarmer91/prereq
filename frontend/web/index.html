@@ -35,6 +35,12 @@
   <title>Prereq</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- Paints before any JS runs, so the gap before Flutter's first frame is
+       Nocturne's ground colour instead of a flash of blank white. -->
+  <style>
+    html, body { background: #161826; }
+  </style>
+
   <!-- Required by mixpanel_flutter on web -->
   <script src="./assets/packages/mixpanel_flutter/assets/mixpanel.js"></script>
 </head>

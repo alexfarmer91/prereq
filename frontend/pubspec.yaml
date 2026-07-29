@@ -86,9 +86,16 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # A copy of brand_assets/images/, not a reference to it: `flutter run`'s
+  # dev asset server refuses to serve files from outside the project root
+  # (../brand_assets/...), returning a 404 HTML page in place of the image.
+  # Re-copy here if the source photos in brand_assets/images/ change.
+  assets:
+    - assets/images/
+
   # Inter — 18pt optical size (tuned for UI/body text, not display headings).
   # Regular 400 + Medium 500 is all Nocturne's theme uses; headings never go
-  # past 500. See ../brand_assets/handoff/INSTALL.md.
+  # past 500. See lib/shared/theme/app_theme.dart.
   fonts:
     - family: Inter
       fonts:

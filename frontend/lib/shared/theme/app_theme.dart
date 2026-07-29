@@ -150,46 +150,55 @@ abstract final class AppTheme {
         )
         .copyWith(
           displayLarge: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -1.6,
             height: 1.02,
           ),
           displayMedium: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -1.2,
             height: 1.05,
           ),
           headlineLarge: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.8,
             height: 1.1,
           ),
           headlineMedium: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.6,
             height: 1.12,
           ),
           headlineSmall: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.4,
             height: 1.16,
           ),
           titleLarge: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.3,
           ),
           titleMedium: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.2,
           ),
           titleSmall: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.1,
           ),
-          bodyLarge: const TextStyle(height: 1.5),
-          bodyMedium: const TextStyle(height: 1.5),
-          bodySmall: const TextStyle(height: 1.45),
+          bodyLarge: const TextStyle(color: AppColors.textPrimary, height: 1.5),
+          bodyMedium: const TextStyle(color: AppColors.textPrimary, height: 1.5),
+          bodySmall: const TextStyle(color: AppColors.textPrimary, height: 1.45),
           labelSmall: const TextStyle(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
             letterSpacing: 1.1,
           ),

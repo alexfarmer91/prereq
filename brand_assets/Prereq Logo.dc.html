@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/nocturne-c79b32b0-7288-4e5d-832e-4a54d8ba22cc/styles.css">
+<script src="_ds/nocturne-c79b32b0-7288-4e5d-832e-4a54d8ba22cc/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: #161826; }
+  a { color: #9184d9; text-decoration: none; }
+  a:hover { color: #b3a9e6; }
+</style>
+</helmet>
+
+<section style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body), Inter, system-ui, sans-serif; padding: 56px 56px 80px; display: flex; flex-direction: column; gap: 44px;">
+
+  <div id="2a" style="display: flex; flex-direction: column; gap: 44px;">
+
+    <div style="display: flex; flex-direction: column; gap: 10px; max-width: 760px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--color-accent); border: 1px solid var(--color-accent); border-radius: 999px; padding: 3px 9px;">2A</span>
+        <span style="font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-neutral-500);">Turn 2 · The Threshold, built out</span>
+      </div>
+      <h1 style="font-family: var(--font-heading), Inter, sans-serif; font-weight: 500; font-size: 38px; line-height: 1.1; letter-spacing: -0.02em; margin: 0;">Prereq identity</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--color-neutral-400); text-wrap: pretty;">Four unequal outcomes, one line drawn straight through them. The bars are a distribution, not a growth chart — deliberately non-monotonic, so it never reads as a generic finance up-and-to-the-right. The accent rule is the market's threshold, and it overshoots the mark on both sides: the price extends past what it can actually see.</p>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 28px;">
+
+      <div style="flex: 2 1 520px; min-width: 460px; display: flex; align-items: center; justify-content: center; gap: 32px; padding: 68px 40px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: radial-gradient(110% 120% at 22% 0%, #1e2134 0%, var(--color-bg) 68%);">
+        <svg width="116" height="116" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M28 104 V80" stroke="var(--color-neutral-600)" stroke-width="14"></path>
+          <path d="M52 104 V56" stroke="var(--color-neutral-400)" stroke-width="14"></path>
+          <path d="M76 104 V68" stroke="var(--color-neutral-500)" stroke-width="14"></path>
+          <path d="M100 104 V34" stroke="var(--color-text)" stroke-width="14"></path>
+          <path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="4"></path>
+        </svg>
+        <div style="font-family: var(--font-heading), Inter, sans-serif; font-size: 84px; font-weight: 500; letter-spacing: -0.045em; line-height: 0.9;">prereq</div>
+      </div>
+
+      <div style="flex: 1 1 300px; min-width: 280px; display: flex; flex-direction: column; gap: 18px; padding: 26px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: var(--color-surface);">
+        <div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-neutral-500);">Construction</div>
+        <svg width="100%" viewBox="0 0 128 128" fill="none" stroke-linecap="round" style="max-width: 260px;">
+          <g stroke="var(--color-neutral-800)" stroke-width="0.5">
+            <path d="M16 0 V128 M40 0 V128 M64 0 V128 M88 0 V128 M112 0 V128"></path>
+            <path d="M0 16 H128 M0 40 H128 M0 88 H128 M0 112 H128"></path>
+          </g>
+          <path d="M0 104 H128" stroke="var(--color-neutral-700)" stroke-width="0.8" stroke-dasharray="3 3"></path>
+          <path d="M0 64 H128" stroke="var(--color-accent-800, #3a3565)" stroke-width="0.8" stroke-dasharray="3 3"></path>
+          <path d="M28 104 V80" stroke="var(--color-neutral-600)" stroke-width="14"></path>
+          <path d="M52 104 V56" stroke="var(--color-neutral-400)" stroke-width="14"></path>
+          <path d="M76 104 V68" stroke="var(--color-neutral-500)" stroke-width="14"></path>
+          <path d="M100 104 V34" stroke="var(--color-text)" stroke-width="14"></path>
+          <path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="4"></path>
+        </svg>
+        <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-400);">
+          <div>Grid 128 · bar stem 14, pitch 24, round caps</div>
+          <div>Baseline y104 · tops 80 / 56 / 68 / 34</div>
+          <div>Threshold y64 — exact centre, stem 4, bleeds 6 units past each bar edge</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 28px;">
+
+      <div style="flex: 1 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 18px; padding: 26px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: var(--color-surface);">
+        <div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-neutral-500);">Clear space</div>
+        <div style="display: flex; align-items: center; justify-content: center; padding: 8px;">
+          <div style="border: 1px dashed var(--color-neutral-700); padding: 26px; display: flex;">
+            <svg width="132" height="132" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+              <path d="M28 104 V80" stroke="var(--color-neutral-600)" stroke-width="14"></path>
+              <path d="M52 104 V56" stroke="var(--color-neutral-400)" stroke-width="14"></path>
+              <path d="M76 104 V68" stroke="var(--color-neutral-500)" stroke-width="14"></path>
+              <path d="M100 104 V34" stroke="var(--color-text)" stroke-width="14"></path>
+              <path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="4"></path>
+            </svg>
+          </div>
+        </div>
+        <div style="font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-400);">Keep one bar-width (14 units, ≈ 20% of the mark) clear on every side. The threshold rule may bleed into it — nothing else may.</div>
+      </div>
+
+      <div style="flex: 1 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 18px; padding: 26px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: var(--color-surface);">
+        <div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-neutral-500);">Sizes</div>
+        <div style="display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <svg width="64" height="64" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M28 104 V80" stroke="var(--color-neutral-600)" stroke-width="14"></path><path d="M52 104 V56" stroke="var(--color-neutral-400)" stroke-width="14"></path><path d="M76 104 V68" stroke="var(--color-neutral-500)" stroke-width="14"></path><path d="M100 104 V34" stroke="var(--color-text)" stroke-width="14"></path><path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="4"></path></svg>
+            <span style="font-size: 11px; color: var(--color-neutral-600);">64</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <svg width="32" height="32" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M28 104 V80" stroke="var(--color-neutral-600)" stroke-width="15"></path><path d="M52 104 V56" stroke="var(--color-neutral-400)" stroke-width="15"></path><path d="M76 104 V68" stroke="var(--color-neutral-500)" stroke-width="15"></path><path d="M100 104 V34" stroke="var(--color-text)" stroke-width="15"></path><path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="6"></path></svg>
+            <span style="font-size: 11px; color: var(--color-neutral-600);">32</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <svg width="24" height="24" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M26 104 V78" stroke="var(--color-neutral-500)" stroke-width="20"></path><path d="M64 104 V54" stroke="var(--color-neutral-400)" stroke-width="20"></path><path d="M102 104 V32" stroke="var(--color-text)" stroke-width="20"></path><path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="9"></path></svg>
+            <span style="font-size: 11px; color: var(--color-neutral-600);">24</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M26 104 V78" stroke="var(--color-neutral-500)" stroke-width="22"></path><path d="M64 104 V54" stroke="var(--color-neutral-400)" stroke-width="22"></path><path d="M102 104 V32" stroke="var(--color-text)" stroke-width="22"></path><path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="11"></path></svg>
+            <span style="font-size: 11px; color: var(--color-neutral-600);">16</span>
+          </div>
+        </div>
+        <div style="font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-400);">At 24px and below, switch to the <strong style="color: var(--color-neutral-300); font-weight: 500;">compact mark</strong>: three bars, thicker stems, a heavier rule. Never render the four-bar mark below 28px — the gaps close up.</div>
+      </div>
+
+      <div style="flex: 1 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 18px; padding: 26px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: var(--color-surface);">
+        <div style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-neutral-500);">Lockups</div>
+        <div style="display: flex; align-items: center; gap: 13px;">
+          <svg width="38" height="38" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M28 104 V80" stroke="var(--color-neutral-600)" stroke-width="14"></path><path d="M52 104 V56" stroke="var(--color-neutral-400)" stroke-width="14"></path><path d="M76 104 V68" stroke="var(--color-neutral-500)" stroke-width="14"></path><path d="M100 104 V34" stroke="var(--color-text)" stroke-width="14"></path><path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="5"></path></svg>
+          <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 36px; font-weight: 500; letter-spacing: -0.04em; line-height: 1;">prereq</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
+          <svg width="46" height="46" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M28 104 V80" stroke="var(--color-neutral-600)" stroke-width="14"></path><path d="M52 104 V56" stroke="var(--color-neutral-400)" stroke-width="14"></path><path d="M76 104 V68" stroke="var(--color-neutral-500)" stroke-width="14"></path><path d="M100 104 V34" stroke="var(--color-text)" stroke-width="14"></path><path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="5"></path></svg>
+          <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 28px; font-weight: 500; letter-spacing: -0.04em; line-height: 1;">prereq</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 26px; font-weight: 500; letter-spacing: 0.16em; line-height: 1; text-transform: uppercase;">Prereq</span>
+          <span style="font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-400);">Horizontal is the default. Stacked for square placements. All-caps wordmark only for footers and legal — never with the mark.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 28px;">
+
+      <div style="flex: 1 1 480px; min-width: 420px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); overflow: hidden; background: var(--color-bg);">
+        <div style="display: flex; align-items: center; gap: 28px; padding: 15px 22px; border-bottom: 1px solid var(--color-neutral-800);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="24" height="24" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M26 104 V78" stroke="var(--color-neutral-500)" stroke-width="20"></path><path d="M64 104 V54" stroke="var(--color-neutral-400)" stroke-width="20"></path><path d="M102 104 V32" stroke="var(--color-text)" stroke-width="20"></path><path d="M6 64 H122" stroke="var(--color-accent)" stroke-width="9"></path></svg>
+            <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 19px; font-weight: 500; letter-spacing: -0.035em;">prereq</span>
+          </div>
+          <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-neutral-500);">
+            <span style="color: var(--color-text);">Markets</span>
+            <span>Signals</span>
+            <span>Watchlist</span>
+          </div>
+          <span style="margin-left: auto; font-size: 12px; color: var(--color-accent); border: 1px solid var(--color-accent); border-radius: var(--radius-sm, 6px); padding: 5px 11px;">Upgrade</span>
+        </div>
+        <div style="padding: 28px 22px 32px; display: flex; flex-direction: column; gap: 9px;">
+          <div style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-600);">Kalshi · FED-26JUL</div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 42px; font-weight: 500; letter-spacing: -0.035em;">63¢</span>
+            <span style="font-size: 15px; color: var(--color-accent);">Prereq 48%</span>
+          </div>
+          <div style="font-size: 13px; color: var(--color-neutral-500);">15-point spread against our posterior.</div>
+        </div>
+      </div>
+
+      <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 200px; border-radius: var(--radius-md, 8px); background: var(--color-accent);">
+        <svg width="92" height="92" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M28 104 V80" stroke="#161826" stroke-width="14" opacity="0.4"></path>
+          <path d="M52 104 V56" stroke="#161826" stroke-width="14" opacity="0.65"></path>
+          <path d="M76 104 V68" stroke="#161826" stroke-width="14" opacity="0.52"></path>
+          <path d="M100 104 V34" stroke="#161826" stroke-width="14"></path>
+          <path d="M6 64 H122" stroke="#e9e9ed" stroke-width="4"></path>
+        </svg>
+      </div>
+
+      <div style="flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; width: 200px; padding: 24px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: #e9e9ed;">
+        <svg width="74" height="74" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M28 104 V80" stroke="#9397ab" stroke-width="14"></path>
+          <path d="M52 104 V56" stroke="#595d6c" stroke-width="14"></path>
+          <path d="M76 104 V68" stroke="#75798c" stroke-width="14"></path>
+          <path d="M100 104 V34" stroke="#161826" stroke-width="14"></path>
+          <path d="M6 64 H122" stroke="#796cbf" stroke-width="4"></path>
+        </svg>
+        <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 26px; font-weight: 500; letter-spacing: -0.04em; color: #161826;">prereq</span>
+      </div>
+
+      <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 200px; border-radius: var(--radius-md, 8px); border: 1px solid var(--color-neutral-800); background: var(--color-surface);">
+        <svg width="92" height="92" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M28 104 V80" stroke="var(--color-text)" stroke-width="14"></path>
+          <path d="M52 104 V56" stroke="var(--color-text)" stroke-width="14"></path>
+          <path d="M76 104 V68" stroke="var(--color-text)" stroke-width="14"></path>
+          <path d="M100 104 V34" stroke="var(--color-text)" stroke-width="14"></path>
+          <path d="M6 64 H122" stroke="var(--color-text)" stroke-width="4"></path>
+        </svg>
+      </div>
+
+    </div>
+
+    <div style="font-size: 12.5px; line-height: 1.6; color: var(--color-neutral-500); max-width: 780px; text-wrap: pretty;">One-colour version at far right — for embroidery, engraving and single-ink print the tonal steps collapse to solid; the rule stays, at the same weight. On the accent tile the rule inverts to <span style="color: var(--color-neutral-300);">--color-text</span> so it never disappears into its own ground.</div>
+
+    <div style="height: 1px; background: linear-gradient(to right, transparent, var(--color-neutral-800) 48px, var(--color-neutral-800) calc(100% - 48px), transparent);"></div>
+
+  </div>
+
+</section>
+
+<section style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body), Inter, system-ui, sans-serif; padding: 56px 56px 88px; display: flex; flex-direction: column; gap: 40px;">
+
+  <div style="display: flex; flex-direction: column; gap: 10px; max-width: 720px;">
+    <div style="font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent);">Turn 1 &nbsp;·&nbsp; Identity</div>
+    <h1 style="font-family: var(--font-heading), Inter, sans-serif; font-weight: 500; font-size: 38px; line-height: 1.1; letter-spacing: -0.02em; margin: 0;">Prereq — four logo directions</h1>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--color-neutral-400); text-wrap: pretty;">All four are monoline, geometric, and built to survive at 16px. Each takes a different position on the core belief — that a market price is not the same thing as the truth. Reference them in chat as <a href="#1a">1a</a>, <a href="#1b">1b</a>, <a href="#1c">1c</a>, <a href="#1d">1d</a>.</p>
+    <div style="height: 1px; margin-top: 14px; background: linear-gradient(to right, transparent, var(--color-neutral-800) 48px, var(--color-neutral-800) calc(100% - 48px), transparent);"></div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: stretch;">
+
+    <div id="1a" style="flex: 1 1 400px; min-width: 380px; display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--color-neutral-800);">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--color-accent); border: 1px solid var(--color-accent); border-radius: 999px; padding: 3px 9px;">1A</span>
+        <span style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-500);">The Prefix</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; padding: 44px 0 36px; background: radial-gradient(120% 90% at 50% 0%, #1d2033 0%, var(--color-surface) 70%);">
+        <svg width="132" height="132" viewBox="0 0 128 128" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M40 26 V106" stroke="var(--color-text)" stroke-width="11"></path>
+          <path d="M40 26 H66 A24 24 0 0 1 66 74 H40" stroke="var(--color-text)" stroke-width="11"></path>
+          <circle cx="88" cy="100" r="7.5" fill="var(--color-accent)"></circle>
+        </svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 14px; padding: 26px 20px; border-top: 1px solid var(--color-neutral-900);">
+        <svg width="34" height="34" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M40 26 V106" stroke="var(--color-text)" stroke-width="11"></path>
+          <path d="M40 26 H66 A24 24 0 0 1 66 74 H40" stroke="var(--color-text)" stroke-width="11"></path>
+          <circle cx="88" cy="100" r="7.5" fill="var(--color-accent)"></circle>
+        </svg>
+        <div style="font-family: var(--font-heading), Inter, sans-serif; font-size: 34px; font-weight: 500; letter-spacing: -0.035em; line-height: 1;">prereq<span style="color: var(--color-accent);">.</span></div>
+      </div>
+      <sc-if value="{{ showRationale }}" hint-placeholder-val="{{ true }}">
+        <div style="padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); font-size: 13px; line-height: 1.6; color: var(--color-neutral-400); text-wrap: pretty;">A P built from one stem and one bowl, with a full stop set out on its own baseline — the thing that comes <em style="color: var(--color-neutral-300); font-style: normal;">before</em> the sentence. Warmest and most brandable of the four; reads as software, not as a chart.</div>
+      </sc-if>
+      <sc-if value="{{ showFavicons }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: flex-end; gap: 18px; padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); background: var(--color-bg);">
+          <svg width="32" height="32" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M40 26 V106" stroke="var(--color-text)" stroke-width="12"></path><path d="M40 26 H66 A24 24 0 0 1 66 74 H40" stroke="var(--color-text)" stroke-width="12"></path><circle cx="88" cy="100" r="8" fill="var(--color-accent)"></circle></svg>
+          <svg width="22" height="22" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M40 26 V106" stroke="var(--color-text)" stroke-width="13"></path><path d="M40 26 H66 A24 24 0 0 1 66 74 H40" stroke="var(--color-text)" stroke-width="13"></path><circle cx="88" cy="100" r="9" fill="var(--color-accent)"></circle></svg>
+          <svg width="16" height="16" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M40 26 V106" stroke="var(--color-text)" stroke-width="15"></path><path d="M40 26 H66 A24 24 0 0 1 66 74 H40" stroke="var(--color-text)" stroke-width="15"></path><circle cx="88" cy="100" r="10" fill="var(--color-accent)"></circle></svg>
+          <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-600); margin-left: auto;">32 / 22 / 16</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div id="1b" style="flex: 1 1 400px; min-width: 380px; display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--color-neutral-800);">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--color-accent); border: 1px solid var(--color-accent); border-radius: 999px; padding: 3px 9px;">1B</span>
+        <span style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-500);">The Threshold</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; padding: 44px 0 36px; background: radial-gradient(120% 90% at 50% 0%, #1d2033 0%, var(--color-surface) 70%);">
+        <svg width="132" height="132" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M22 104 V80" stroke="var(--color-neutral-600)" stroke-width="13"></path>
+          <path d="M50 104 V56" stroke="var(--color-neutral-400)" stroke-width="13"></path>
+          <path d="M78 104 V68" stroke="var(--color-neutral-500)" stroke-width="13"></path>
+          <path d="M106 104 V34" stroke="var(--color-text)" stroke-width="13"></path>
+          <path d="M6 62 H122" stroke="var(--color-accent)" stroke-width="4"></path>
+        </svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 14px; padding: 26px 20px; border-top: 1px solid var(--color-neutral-900);">
+        <svg width="34" height="34" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M22 104 V80" stroke="var(--color-neutral-600)" stroke-width="13"></path>
+          <path d="M50 104 V56" stroke="var(--color-neutral-400)" stroke-width="13"></path>
+          <path d="M78 104 V68" stroke="var(--color-neutral-500)" stroke-width="13"></path>
+          <path d="M106 104 V34" stroke="var(--color-text)" stroke-width="13"></path>
+          <path d="M6 62 H122" stroke="var(--color-accent)" stroke-width="5"></path>
+        </svg>
+        <div style="font-family: var(--font-heading), Inter, sans-serif; font-size: 34px; font-weight: 500; letter-spacing: -0.035em; line-height: 1;">prereq</div>
+      </div>
+      <sc-if value="{{ showRationale }}" hint-placeholder-val="{{ true }}">
+        <div style="padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); font-size: 13px; line-height: 1.6; color: var(--color-neutral-400); text-wrap: pretty;">Four unequal outcomes and one line drawn straight through them: the 50¢ threshold the market keeps mistaking for a forecast. Most literal to the category — closest to Kalshi/Polymarket visual language, so it reads instantly and differentiates least.</div>
+      </sc-if>
+      <sc-if value="{{ showFavicons }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: flex-end; gap: 18px; padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); background: var(--color-bg);">
+          <svg width="32" height="32" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M24 104 V80" stroke="var(--color-neutral-500)" stroke-width="16"></path><path d="M56 104 V56" stroke="var(--color-neutral-400)" stroke-width="16"></path><path d="M88 104 V34" stroke="var(--color-text)" stroke-width="16"></path><path d="M8 64 H120" stroke="var(--color-accent)" stroke-width="7"></path></svg>
+          <svg width="22" height="22" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M24 104 V80" stroke="var(--color-neutral-500)" stroke-width="18"></path><path d="M56 104 V56" stroke="var(--color-neutral-400)" stroke-width="18"></path><path d="M88 104 V34" stroke="var(--color-text)" stroke-width="18"></path><path d="M8 64 H120" stroke="var(--color-accent)" stroke-width="9"></path></svg>
+          <svg width="16" height="16" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M26 104 V78" stroke="var(--color-neutral-500)" stroke-width="22"></path><path d="M64 104 V54" stroke="var(--color-neutral-400)" stroke-width="22"></path><path d="M102 104 V32" stroke="var(--color-text)" stroke-width="22"></path><path d="M8 64 H120" stroke="var(--color-accent)" stroke-width="11"></path></svg>
+          <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-600); margin-left: auto;">32 / 22 / 16</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div id="1c" style="flex: 1 1 400px; min-width: 380px; display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--color-neutral-800);">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--color-accent); border: 1px solid var(--color-accent); border-radius: 999px; padding: 3px 9px;">1C</span>
+        <span style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-500);">The Spread</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; padding: 44px 0 36px; background: radial-gradient(120% 90% at 50% 0%, #1d2033 0%, var(--color-surface) 70%);">
+        <svg width="132" height="132" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M25.9 95.1 A44 44 0 1 1 102.1 95.1" stroke="var(--color-neutral-700)" stroke-width="9"></path>
+          <path d="M42 25.9 A44 44 0 0 1 86 25.9" stroke="var(--color-accent)" stroke-width="9"></path>
+          <path d="M64 64 L47 34.6" stroke="var(--color-neutral-500)" stroke-width="8"></path>
+          <path d="M64 64 L81 34.6" stroke="var(--color-text)" stroke-width="8"></path>
+          <circle cx="64" cy="64" r="7.5" fill="var(--color-accent)"></circle>
+        </svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 14px; padding: 26px 20px; border-top: 1px solid var(--color-neutral-900);">
+        <svg width="34" height="34" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M25.9 95.1 A44 44 0 1 1 102.1 95.1" stroke="var(--color-neutral-700)" stroke-width="10"></path>
+          <path d="M42 25.9 A44 44 0 0 1 86 25.9" stroke="var(--color-accent)" stroke-width="10"></path>
+          <path d="M64 64 L47 34.6" stroke="var(--color-neutral-500)" stroke-width="9"></path>
+          <path d="M64 64 L81 34.6" stroke="var(--color-text)" stroke-width="9"></path>
+          <circle cx="64" cy="64" r="8" fill="var(--color-accent)"></circle>
+        </svg>
+        <div style="font-family: var(--font-heading), Inter, sans-serif; font-size: 34px; font-weight: 500; letter-spacing: -0.035em; line-height: 1;">prereq</div>
+      </div>
+      <sc-if value="{{ showRationale }}" hint-placeholder-val="{{ true }}">
+        <div style="padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); font-size: 13px; line-height: 1.6; color: var(--color-neutral-400); text-wrap: pretty;">A dial with two needles and the distance between them lit up — the market's number, the real number, and the gap you trade on. The thesis rendered literally as a mark; strongest story, busiest at 16px.</div>
+      </sc-if>
+      <sc-if value="{{ showFavicons }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: flex-end; gap: 18px; padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); background: var(--color-bg);">
+          <svg width="32" height="32" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M25.9 95.1 A44 44 0 1 1 102.1 95.1" stroke="var(--color-neutral-600)" stroke-width="13"></path><path d="M42 25.9 A44 44 0 0 1 86 25.9" stroke="var(--color-accent)" stroke-width="13"></path></svg>
+          <svg width="22" height="22" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M25.9 95.1 A44 44 0 1 1 102.1 95.1" stroke="var(--color-neutral-600)" stroke-width="16"></path><path d="M42 25.9 A44 44 0 0 1 86 25.9" stroke="var(--color-accent)" stroke-width="16"></path></svg>
+          <svg width="16" height="16" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M25.9 95.1 A44 44 0 1 1 102.1 95.1" stroke="var(--color-neutral-600)" stroke-width="20"></path><path d="M42 25.9 A44 44 0 0 1 86 25.9" stroke="var(--color-accent)" stroke-width="20"></path></svg>
+          <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-600); margin-left: auto;">32 / 22 / 16</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div id="1d" style="flex: 1 1 400px; min-width: 380px; display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--color-neutral-800);">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--color-accent); border: 1px solid var(--color-accent); border-radius: 999px; padding: 3px 9px;">1D</span>
+        <span style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-500);">The Prism</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; padding: 44px 0 36px; background: radial-gradient(120% 90% at 50% 0%, #1d2033 0%, var(--color-surface) 70%);">
+        <svg width="132" height="132" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M8 64 H38" stroke="var(--color-neutral-400)" stroke-width="10"></path>
+          <path d="M62 64 L118 30" stroke="var(--color-accent)" stroke-width="11"></path>
+          <path d="M62 64 L118 71" stroke="var(--color-neutral-600)" stroke-width="7"></path>
+          <path d="M62 64 L118 103" stroke="var(--color-neutral-700)" stroke-width="5"></path>
+          <circle cx="51" cy="64" r="6.5" fill="var(--color-text)"></circle>
+        </svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 14px; padding: 26px 20px; border-top: 1px solid var(--color-neutral-900);">
+        <svg width="34" height="34" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M8 64 H36" stroke="var(--color-neutral-400)" stroke-width="12"></path>
+          <path d="M62 64 L118 30" stroke="var(--color-accent)" stroke-width="13"></path>
+          <path d="M62 64 L118 71" stroke="var(--color-neutral-600)" stroke-width="8"></path>
+          <path d="M62 64 L118 103" stroke="var(--color-neutral-700)" stroke-width="6"></path>
+          <circle cx="50" cy="64" r="7.5" fill="var(--color-text)"></circle>
+        </svg>
+        <div style="font-family: var(--font-heading), Inter, sans-serif; font-size: 34px; font-weight: 500; letter-spacing: -0.035em; line-height: 1;">prereq</div>
+      </div>
+      <sc-if value="{{ showRationale }}" hint-placeholder-val="{{ true }}">
+        <div style="padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); font-size: 13px; line-height: 1.6; color: var(--color-neutral-400); text-wrap: pretty;">One price goes in; three weighted futures come out, the likeliest lit. This is the product — analysis fanning a single number into a distribution. Most distinctive and the most scalable as a motion asset.</div>
+      </sc-if>
+      <sc-if value="{{ showFavicons }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: flex-end; gap: 18px; padding: 16px 18px 20px; border-top: 1px solid var(--color-neutral-900); background: var(--color-bg);">
+          <svg width="32" height="32" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M8 64 H34" stroke="var(--color-neutral-400)" stroke-width="14"></path><path d="M62 64 L116 28" stroke="var(--color-accent)" stroke-width="15"></path><path d="M62 64 L116 74" stroke="var(--color-neutral-600)" stroke-width="10"></path><path d="M62 64 L116 106" stroke="var(--color-neutral-700)" stroke-width="7"></path><circle cx="49" cy="64" r="9" fill="var(--color-text)"></circle></svg>
+          <svg width="22" height="22" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M8 64 H32" stroke="var(--color-neutral-400)" stroke-width="17"></path><path d="M64 64 L114 30" stroke="var(--color-accent)" stroke-width="18"></path><path d="M64 64 L114 78" stroke="var(--color-neutral-600)" stroke-width="12"></path><circle cx="49" cy="64" r="10.5" fill="var(--color-text)"></circle></svg>
+          <svg width="16" height="16" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M10 64 H30" stroke="var(--color-neutral-400)" stroke-width="21"></path><path d="M66 64 L112 32" stroke="var(--color-accent)" stroke-width="22"></path><path d="M66 64 L112 82" stroke="var(--color-neutral-600)" stroke-width="15"></path><circle cx="49" cy="64" r="13" fill="var(--color-text)"></circle></svg>
+          <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-600); margin-left: auto;">32 / 22 / 16</span>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <sc-if value="{{ showInUse }}" hint-placeholder-val="{{ true }}">
+  <div style="display: flex; flex-direction: column; gap: 22px; margin-top: 8px;">
+    <div style="height: 1px; background: linear-gradient(to right, transparent, var(--color-neutral-800) 48px, var(--color-neutral-800) calc(100% - 48px), transparent);"></div>
+    <div style="font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-neutral-500);">In use — 1D</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 22px;">
+
+      <div style="flex: 1 1 420px; min-width: 380px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); overflow: hidden; background: var(--color-bg);">
+        <div style="display: flex; align-items: center; gap: 26px; padding: 14px 20px; border-bottom: 1px solid var(--color-neutral-800);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="24" height="24" viewBox="0 0 128 128" fill="none" stroke-linecap="round"><path d="M8 64 H34" stroke="var(--color-neutral-400)" stroke-width="15"></path><path d="M62 64 L116 28" stroke="var(--color-accent)" stroke-width="16"></path><path d="M62 64 L116 74" stroke="var(--color-neutral-600)" stroke-width="11"></path><path d="M62 64 L116 106" stroke="var(--color-neutral-700)" stroke-width="7"></path><circle cx="48" cy="64" r="9.5" fill="var(--color-text)"></circle></svg>
+            <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 19px; font-weight: 500; letter-spacing: -0.03em;">prereq</span>
+          </div>
+          <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-neutral-500);">
+            <span style="color: var(--color-text);">Markets</span>
+            <span>Signals</span>
+            <span>Watchlist</span>
+          </div>
+        </div>
+        <div style="padding: 26px 20px 30px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-600);">Kalshi · FED-26JUL</div>
+          <div style="display: flex; align-items: baseline; gap: 14px;">
+            <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 40px; font-weight: 500; letter-spacing: -0.03em;">63¢</span>
+            <span style="font-size: 15px; color: var(--color-accent);">Prereq: 48%</span>
+          </div>
+          <div style="font-size: 13px; color: var(--color-neutral-500);">15-point spread against our posterior.</div>
+        </div>
+      </div>
+
+      <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 220px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: var(--color-accent);">
+        <svg width="86" height="86" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M8 64 H38" stroke="#161826" stroke-width="10" opacity="0.55"></path>
+          <path d="M62 64 L118 30" stroke="#161826" stroke-width="11"></path>
+          <path d="M62 64 L118 71" stroke="#161826" stroke-width="7" opacity="0.5"></path>
+          <path d="M62 64 L118 103" stroke="#161826" stroke-width="5" opacity="0.35"></path>
+          <circle cx="51" cy="64" r="6.5" fill="#161826" opacity="0.8"></circle>
+        </svg>
+      </div>
+
+      <div style="flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 220px; padding: 22px; border: 1px solid var(--color-neutral-800); border-radius: var(--radius-md, 8px); background: #e9e9ed;">
+        <svg width="72" height="72" viewBox="0 0 128 128" fill="none" stroke-linecap="round">
+          <path d="M8 64 H38" stroke="#75798c" stroke-width="10"></path>
+          <path d="M62 64 L118 30" stroke="#796cbf" stroke-width="11"></path>
+          <path d="M62 64 L118 71" stroke="#75798c" stroke-width="7"></path>
+          <path d="M62 64 L118 103" stroke="#9397ab" stroke-width="5"></path>
+          <circle cx="51" cy="64" r="6.5" fill="#3f424d"></circle>
+        </svg>
+        <span style="font-family: var(--font-heading), Inter, sans-serif; font-size: 24px; font-weight: 500; letter-spacing: -0.035em; color: #161826;">prereq</span>
+      </div>
+
+    </div>
+  </div>
+  </sc-if>
+
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showRationale&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Board&quot;},&quot;showFavicons&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Board&quot;},&quot;showInUse&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Board&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showRationale: this.props.showRationale ?? true,
+      showFavicons: this.props.showFavicons ?? true,
+      showInUse: this.props.showInUse ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>

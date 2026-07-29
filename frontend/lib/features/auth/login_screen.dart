@@ -7,7 +7,9 @@ import 'package:google_sign_in_web/web_only.dart' as gsi_web;
 import '../../core/config/app_config.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/app_backdrop.dart';
 import '../../shared/widgets/prereq_mark.dart';
+import '../../shared/widgets/prereq_spinner.dart';
 
 /// Login/signup screen.
 ///
@@ -21,29 +23,57 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
+    final restoring =
+        auth.mode == AuthMode.google && auth.status == AuthStatus.initializing;
 
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const _Brand(),
-                const SizedBox(height: 32),
-                switch (auth.mode) {
-                  AuthMode.google => const _GoogleSignInPanel(),
-                  AuthMode.unconfigured => const _SetupNotice(),
-                  AuthMode.devBypass => const Text(
-                      'Dev auth bypass is active — you are signed in.'),
-                },
-              ],
+      backgroundColor: Colors.transparent,
+      body: AppBackdrop(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _Brand(),
+                  const SizedBox(height: 32),
+                  if (restoring)
+                    const _LoadingPanel()
+                  else
+                    switch (auth.mode) {
+                      AuthMode.google => const _GoogleSignInPanel(),
+                      AuthMode.unconfigured => const _SetupNotice(),
+                      AuthMode.devBypass => const Text(
+                          'Dev auth bypass is active — you are signed in.'),
+                    },
+                ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LoadingPanel extends StatelessWidget {
+  const _LoadingPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        const PrereqSpinner(),
+        const SizedBox(height: 16),
+        Text(
+          'Signing you in…',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 }
@@ -59,7 +89,7 @@ class _Brand extends StatelessWidget {
         const PrereqLockup(markSize: 56, stacked: true),
         const SizedBox(height: 16),
         Text(
-          'Prediction market analytics',
+          'Don\'t go in alone',
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),

@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../core/analytics/analytics.dart';
+import '../../core/auth/token_cache.dart';
 import '../../core/config/app_config.dart';
 
 part 'auth_provider.g.dart';
@@ -56,10 +57,17 @@ class AuthController extends _$AuthController {
             status: AuthStatus.unconfigured, mode: AuthMode.unconfigured);
       case AuthMode.google:
         // build() must stay synchronous — state updates arrive later via
-        // the auth event stream set up in _initGoogle.
+        // the auth event stream set up in _initGoogle. If a still-valid
+        // token survived a page reload, restore optimistically instead of
+        // forcing the user through interactive sign-in again; _initGoogle
+        // still runs to pick up the real GoogleSignInAccount.
         unawaited(_initGoogle());
-        return const AuthState(
-            status: AuthStatus.initializing, mode: AuthMode.google);
+        return AuthState(
+          status: TokenCache.validToken != null
+              ? AuthStatus.signedIn
+              : AuthStatus.initializing,
+          mode: AuthMode.google,
+        );
     }
   }
 
@@ -95,7 +103,23 @@ class AuthController extends _$AuthController {
       GoogleSignInAuthenticationEventSignIn(:final user) => user,
       GoogleSignInAuthenticationEventSignOut() => null,
     };
+
+    // A sign-out event fires not just for a real logout but also when
+    // attemptLightweightAuthentication()'s silent restore comes up empty on
+    // boot. If we've never had a live account this tab and a cached token
+    // (restored optimistically in build()) is still valid, this is the
+    // latter — don't let it bounce a good session back to signed-out.
+    if (account == null && _account == null && TokenCache.validToken != null) {
+      return;
+    }
+
     _account = account;
+    final idToken = account?.authentication.idToken;
+    if (idToken != null) {
+      unawaited(TokenCache.save(idToken));
+    } else {
+      unawaited(TokenCache.clear());
+    }
     final next = AuthState(
       status: account != null ? AuthStatus.signedIn : AuthStatus.signedOut,
       mode: AuthMode.google,
@@ -115,15 +139,18 @@ class AuthController extends _$AuthController {
   /// The Bearer token for API calls / WebSocket, or null when no token is
   /// needed (dev bypass) or available.
   ///
-  /// Known limitation: Google ID tokens expire after ~1h and this plugin
-  /// has no built-in refresh — a tab left open that long will need the
-  /// user to sign in again. Acceptable for now; not solved here.
+  /// Prefers the live [GoogleSignIn] session's token; falls back to the
+  /// cached token (surviving a page reload) when GIS hasn't restored a
+  /// session yet. Google ID tokens have a fixed ~1h lifetime and this
+  /// plugin has no built-in refresh — once both are expired, the user
+  /// needs to sign in again. Acceptable for now; not solved here.
   Future<String?> getToken() async {
     if (state.mode != AuthMode.google) return null;
-    return _account?.authentication.idToken;
+    return _account?.authentication.idToken ?? TokenCache.validToken;
   }
 
   Future<void> signOut() async {
     await GoogleSignIn.instance.signOut();
+    await TokenCache.clear();
   }
 }
