@@ -22,7 +22,8 @@ final class MarketsProvider
     with $FutureModifier<List<Market>>, $FutureProvider<List<Market>> {
   MarketsProvider._({
     required MarketsFamily super.from,
-    required ({String? category, MarketSort sort}) super.argument,
+    required ({String? category, MarketSort sort, int? maxDaysToClose})
+    super.argument,
   }) : super(
          retry: null,
          name: r'marketsProvider',
@@ -49,8 +50,15 @@ final class MarketsProvider
 
   @override
   FutureOr<List<Market>> create(Ref ref) {
-    final argument = this.argument as ({String? category, MarketSort sort});
-    return markets(ref, category: argument.category, sort: argument.sort);
+    final argument =
+        this.argument
+            as ({String? category, MarketSort sort, int? maxDaysToClose});
+    return markets(
+      ref,
+      category: argument.category,
+      sort: argument.sort,
+      maxDaysToClose: argument.maxDaysToClose,
+    );
   }
 
   @override
@@ -64,13 +72,13 @@ final class MarketsProvider
   }
 }
 
-String _$marketsHash() => r'185990b6cecf991df3044314355a18805e641a1c';
+String _$marketsHash() => r'a4985a67882ffeca5227f2f01f7d6248002c098d';
 
 final class MarketsFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<List<Market>>,
-          ({String? category, MarketSort sort})
+          ({String? category, MarketSort sort, int? maxDaysToClose})
         > {
   MarketsFamily._()
     : super(
@@ -81,8 +89,14 @@ final class MarketsFamily extends $Family
         isAutoDispose: true,
       );
 
-  MarketsProvider call({String? category, MarketSort sort = MarketSort.edge}) =>
-      MarketsProvider._(argument: (category: category, sort: sort), from: this);
+  MarketsProvider call({
+    String? category,
+    MarketSort sort = MarketSort.edge,
+    int? maxDaysToClose,
+  }) => MarketsProvider._(
+    argument: (category: category, sort: sort, maxDaysToClose: maxDaysToClose),
+    from: this,
+  );
 
   @override
   String toString() => r'marketsProvider';

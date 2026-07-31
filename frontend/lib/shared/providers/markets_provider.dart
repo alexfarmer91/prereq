@@ -22,10 +22,13 @@ Future<List<Market>> markets(
   Ref ref, {
   String? category,
   MarketSort sort = MarketSort.edge,
+  int? maxDaysToClose,
 }) {
-  return ref
-      .watch(apiClientProvider)
-      .getMarkets(category: category, sort: sort);
+  return ref.watch(apiClientProvider).getMarkets(
+        category: category,
+        sort: sort,
+        maxDaysToClose: maxDaysToClose,
+      );
 }
 
 @riverpod

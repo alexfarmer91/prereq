@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 128" width="420" height="128" fill="none" stroke-linecap="round">
+  <g>
+      <path d="M28 104 V80" stroke="#9397ab" stroke-width="14"></path>
+      <path d="M52 104 V56" stroke="#595d6c" stroke-width="14"></path>
+      <path d="M76 104 V68" stroke="#75798c" stroke-width="14"></path>
+      <path d="M100 104 V34" stroke="#161826" stroke-width="14"></path>
+      <path d="M6 64 H122" stroke="#796cbf" stroke-width="4"></path>
+  </g>
+  <text x="152" y="88" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="72" letter-spacing="-3.2" fill="#161826">prereq</text>
+</svg>

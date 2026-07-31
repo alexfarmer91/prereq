@@ -96,9 +96,17 @@ void main() {
   });
 
   test('UserProfile parses and round-trips', () {
-    final profile = UserProfile.fromJson(decode(
-        '{"google_user_id":"user_123","bankroll_dollars":1000.0,"terms_accepted":false,"created_at":"2026-01-01T00:00:00Z"}'));
+    final profile = UserProfile.fromJson(decode('''
+      {"google_user_id":"user_123","bankroll_dollars":1000.0,"plan":"free",
+       "terms_accepted":false,
+       "email":"alex@example.com","email_verified":true,
+       "display_name":"Alex","avatar_url":"https://example.com/a.png",
+       "created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z",
+       "last_seen_at":null}
+    '''));
     expect(profile.bankrollDollars, 1000.0);
+    expect(profile.displayName, 'Alex');
+    expect(profile.termsAccepted, isFalse);
     expect(UserProfile.fromJson(profile.toJson()), profile);
   });
 

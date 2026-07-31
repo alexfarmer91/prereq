@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/analytics/analytics.dart';
 import 'core/analytics/consent_gate.dart';
+import 'core/auth/token_cache.dart';
 import 'router.dart';
 import 'shared/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Analytics.init();
+  await TokenCache.init();
   runApp(const ProviderScope(child: PrereqApp()));
 }
 

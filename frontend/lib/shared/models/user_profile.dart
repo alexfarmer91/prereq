@@ -9,8 +9,15 @@ abstract class UserProfile with _$UserProfile {
   const factory UserProfile({
     required String googleUserId,
     required double bankrollDollars,
+    required String plan,
     required bool termsAccepted,
+    String? email,
+    required bool emailVerified,
+    String? displayName,
+    String? avatarUrl,
     required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? lastSeenAt,
   }) = _UserProfile;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) =>

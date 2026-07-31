@@ -47,7 +47,7 @@ pub async fn list_bets(
     let per_page = params.per_page.unwrap_or(25).clamp(1, 100);
 
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::get_or_create(pool, &user).await?;
     let (bets, total) =
         db::bets::list(pool, me.id, params.outcome.as_deref(), page, per_page).await?;
 
@@ -98,7 +98,7 @@ pub async fn create_bet(
     }
 
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::get_or_create(pool, &user).await?;
     let bet = db::bets::insert(
         pool,
         me.id,
@@ -140,7 +140,7 @@ pub async fn resolve_bet(
     }
 
     let pool = db::require(&state.db)?;
-    let me = db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::get_or_create(pool, &user).await?;
     let bet = db::bets::update_outcome(pool, me.id, bet_id, &body.outcome, body.exit_price_dollars)
         .await?;
     Ok(Json(ApiResponse::ok(bet)))
