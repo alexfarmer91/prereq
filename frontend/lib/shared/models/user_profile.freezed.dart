@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserProfile {
 
- String get clerkUserId; double get bankrollDollars; DateTime get createdAt;
+ String get googleUserId; double get bankrollDollars; bool get termsAccepted; DateTime get createdAt;
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $UserProfileCopyWith<UserProfile> get copyWith => _$UserProfileCopyWithImpl<User
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserProfile&&(identical(other.clerkUserId, clerkUserId) || other.clerkUserId == clerkUserId)&&(identical(other.bankrollDollars, bankrollDollars) || other.bankrollDollars == bankrollDollars)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserProfile&&(identical(other.googleUserId, googleUserId) || other.googleUserId == googleUserId)&&(identical(other.bankrollDollars, bankrollDollars) || other.bankrollDollars == bankrollDollars)&&(identical(other.termsAccepted, termsAccepted) || other.termsAccepted == termsAccepted)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,clerkUserId,bankrollDollars,createdAt);
+int get hashCode => Object.hash(runtimeType,googleUserId,bankrollDollars,termsAccepted,createdAt);
 
 @override
 String toString() {
-  return 'UserProfile(clerkUserId: $clerkUserId, bankrollDollars: $bankrollDollars, createdAt: $createdAt)';
+  return 'UserProfile(googleUserId: $googleUserId, bankrollDollars: $bankrollDollars, termsAccepted: $termsAccepted, createdAt: $createdAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $UserProfileCopyWith<$Res>  {
   factory $UserProfileCopyWith(UserProfile value, $Res Function(UserProfile) _then) = _$UserProfileCopyWithImpl;
 @useResult
 $Res call({
- String clerkUserId, double bankrollDollars, DateTime createdAt
+ String googleUserId, double bankrollDollars, bool termsAccepted, DateTime createdAt
 });
 
 
@@ -65,11 +65,12 @@ class _$UserProfileCopyWithImpl<$Res>
 
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? clerkUserId = null,Object? bankrollDollars = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? googleUserId = null,Object? bankrollDollars = null,Object? termsAccepted = null,Object? createdAt = null,}) {
   return _then(_self.copyWith(
-clerkUserId: null == clerkUserId ? _self.clerkUserId : clerkUserId // ignore: cast_nullable_to_non_nullable
+googleUserId: null == googleUserId ? _self.googleUserId : googleUserId // ignore: cast_nullable_to_non_nullable
 as String,bankrollDollars: null == bankrollDollars ? _self.bankrollDollars : bankrollDollars // ignore: cast_nullable_to_non_nullable
-as double,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as double,termsAccepted: null == termsAccepted ? _self.termsAccepted : termsAccepted // ignore: cast_nullable_to_non_nullable
+as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
   ));
 }
@@ -155,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String clerkUserId,  double bankrollDollars,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String googleUserId,  double bankrollDollars,  bool termsAccepted,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserProfile() when $default != null:
-return $default(_that.clerkUserId,_that.bankrollDollars,_that.createdAt);case _:
+return $default(_that.googleUserId,_that.bankrollDollars,_that.termsAccepted,_that.createdAt);case _:
   return orElse();
 
 }
@@ -176,10 +177,10 @@ return $default(_that.clerkUserId,_that.bankrollDollars,_that.createdAt);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String clerkUserId,  double bankrollDollars,  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String googleUserId,  double bankrollDollars,  bool termsAccepted,  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _UserProfile():
-return $default(_that.clerkUserId,_that.bankrollDollars,_that.createdAt);case _:
+return $default(_that.googleUserId,_that.bankrollDollars,_that.termsAccepted,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +197,10 @@ return $default(_that.clerkUserId,_that.bankrollDollars,_that.createdAt);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String clerkUserId,  double bankrollDollars,  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String googleUserId,  double bankrollDollars,  bool termsAccepted,  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _UserProfile() when $default != null:
-return $default(_that.clerkUserId,_that.bankrollDollars,_that.createdAt);case _:
+return $default(_that.googleUserId,_that.bankrollDollars,_that.termsAccepted,_that.createdAt);case _:
   return null;
 
 }
@@ -211,11 +212,12 @@ return $default(_that.clerkUserId,_that.bankrollDollars,_that.createdAt);case _:
 @JsonSerializable()
 
 class _UserProfile implements UserProfile {
-  const _UserProfile({required this.clerkUserId, required this.bankrollDollars, required this.createdAt});
+  const _UserProfile({required this.googleUserId, required this.bankrollDollars, required this.termsAccepted, required this.createdAt});
   factory _UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);
 
-@override final  String clerkUserId;
+@override final  String googleUserId;
 @override final  double bankrollDollars;
+@override final  bool termsAccepted;
 @override final  DateTime createdAt;
 
 /// Create a copy of UserProfile
@@ -231,16 +233,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserProfile&&(identical(other.clerkUserId, clerkUserId) || other.clerkUserId == clerkUserId)&&(identical(other.bankrollDollars, bankrollDollars) || other.bankrollDollars == bankrollDollars)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserProfile&&(identical(other.googleUserId, googleUserId) || other.googleUserId == googleUserId)&&(identical(other.bankrollDollars, bankrollDollars) || other.bankrollDollars == bankrollDollars)&&(identical(other.termsAccepted, termsAccepted) || other.termsAccepted == termsAccepted)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,clerkUserId,bankrollDollars,createdAt);
+int get hashCode => Object.hash(runtimeType,googleUserId,bankrollDollars,termsAccepted,createdAt);
 
 @override
 String toString() {
-  return 'UserProfile(clerkUserId: $clerkUserId, bankrollDollars: $bankrollDollars, createdAt: $createdAt)';
+  return 'UserProfile(googleUserId: $googleUserId, bankrollDollars: $bankrollDollars, termsAccepted: $termsAccepted, createdAt: $createdAt)';
 }
 
 
@@ -251,7 +253,7 @@ abstract mixin class _$UserProfileCopyWith<$Res> implements $UserProfileCopyWith
   factory _$UserProfileCopyWith(_UserProfile value, $Res Function(_UserProfile) _then) = __$UserProfileCopyWithImpl;
 @override @useResult
 $Res call({
- String clerkUserId, double bankrollDollars, DateTime createdAt
+ String googleUserId, double bankrollDollars, bool termsAccepted, DateTime createdAt
 });
 
 
@@ -268,11 +270,12 @@ class __$UserProfileCopyWithImpl<$Res>
 
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? clerkUserId = null,Object? bankrollDollars = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? googleUserId = null,Object? bankrollDollars = null,Object? termsAccepted = null,Object? createdAt = null,}) {
   return _then(_UserProfile(
-clerkUserId: null == clerkUserId ? _self.clerkUserId : clerkUserId // ignore: cast_nullable_to_non_nullable
+googleUserId: null == googleUserId ? _self.googleUserId : googleUserId // ignore: cast_nullable_to_non_nullable
 as String,bankrollDollars: null == bankrollDollars ? _self.bankrollDollars : bankrollDollars // ignore: cast_nullable_to_non_nullable
-as double,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as double,termsAccepted: null == termsAccepted ? _self.termsAccepted : termsAccepted // ignore: cast_nullable_to_non_nullable
+as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
   ));
 }

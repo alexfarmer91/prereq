@@ -1,6 +1,6 @@
 use axum::{
     middleware,
-    routing::{delete, get, patch},
+    routing::{delete, get, patch, post},
     Router,
 };
 
@@ -21,6 +21,7 @@ pub fn app_router(state: AppState) -> Router {
         .route("/markets/{ticker}", get(markets::get_market))
         .route("/markets/{ticker}/history", get(markets::get_history))
         .route("/me", get(me::get_me).patch(me::update_me))
+        .route("/me/accept-terms", post(me::accept_terms))
         .route(
             "/watchlist",
             get(watchlist::list_watchlist).post(watchlist::add_to_watchlist),

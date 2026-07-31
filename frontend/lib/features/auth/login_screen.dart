@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:google_sign_in_web/web_only.dart' as gsi_web;
+import 'package:google_sign_in_web/web_only.dart'
+    if (dart.library.io) 'gsi_web_stub.dart' as gsi_web;
 
 import '../../core/config/app_config.dart';
 import '../../shared/providers/auth_provider.dart';

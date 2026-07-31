@@ -13,6 +13,7 @@ pub struct User {
     pub bankroll_dollars: f64,
     /// Product tier: 'free' | 'edge' | 'pro' (constrained by the schema).
     pub plan: String,
+    pub terms_accepted: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -24,7 +25,7 @@ impl User {
 }
 
 const USER_COLUMNS: &str =
-    "id, google_user_id, bankroll_dollars::float8 AS bankroll_dollars, plan, created_at";
+    "id, google_user_id, bankroll_dollars::float8 AS bankroll_dollars, plan, terms_accepted, created_at";
 
 pub async fn get_or_create(pool: &PgPool, google_user_id: &str) -> Result<User, AppError> {
     let user = sqlx::query_as::<_, User>(&format!(
@@ -49,6 +50,17 @@ pub async fn update_bankroll(
     ))
     .bind(google_user_id)
     .bind(bankroll_dollars)
+    .fetch_one(pool)
+    .await?;
+    Ok(user)
+}
+
+pub async fn accept_terms(pool: &PgPool, google_user_id: &str) -> Result<User, AppError> {
+    let user = sqlx::query_as::<_, User>(&format!(
+        "UPDATE users SET terms_accepted = TRUE WHERE google_user_id = $1
+         RETURNING {USER_COLUMNS}"
+    ))
+    .bind(google_user_id)
     .fetch_one(pool)
     .await?;
     Ok(user)

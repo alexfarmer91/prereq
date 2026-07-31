@@ -97,7 +97,7 @@ void main() {
 
   test('UserProfile parses and round-trips', () {
     final profile = UserProfile.fromJson(decode(
-        '{"clerk_user_id":"user_123","bankroll_dollars":1000.0,"created_at":"2026-01-01T00:00:00Z"}'));
+        '{"google_user_id":"user_123","bankroll_dollars":1000.0,"terms_accepted":false,"created_at":"2026-01-01T00:00:00Z"}'));
     expect(profile.bankrollDollars, 1000.0);
     expect(UserProfile.fromJson(profile.toJson()), profile);
   });

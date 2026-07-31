@@ -135,6 +135,11 @@ class ApiClient {
     return UserProfile.fromJson(data as Map<String, dynamic>);
   }
 
+  Future<UserProfile> acceptTerms() async {
+    final data = await _send('POST', '/me/accept-terms');
+    return UserProfile.fromJson(data as Map<String, dynamic>);
+  }
+
   // -------------------------------------------------------------- Watchlist
 
   Future<List<WatchlistItem>> getWatchlist() async {

@@ -19,4 +19,10 @@ class Profile extends _$Profile {
         await ref.read(apiClientProvider).updateBankroll(bankrollDollars);
     state = AsyncData(updated);
   }
+
+  /// Accept the terms via `POST /me/accept-terms` and update local state.
+  Future<void> acceptTerms() async {
+    final updated = await ref.read(apiClientProvider).acceptTerms();
+    state = AsyncData(updated);
+  }
 }

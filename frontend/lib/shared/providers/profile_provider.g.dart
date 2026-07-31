@@ -36,7 +36,7 @@ final class ProfileProvider
   Profile create() => Profile();
 }
 
-String _$profileHash() => r'3b99584d6ed758a0a7e5fae61e2e8b11cc5762ae';
+String _$profileHash() => r'2ea39bcb0450af0e206445710497b841ec8a7bf5';
 
 /// The signed-in user's profile (`/me`), including bankroll.
 

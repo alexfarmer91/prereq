@@ -7,8 +7,9 @@ part 'user_profile.g.dart';
 @freezed
 abstract class UserProfile with _$UserProfile {
   const factory UserProfile({
-    required String clerkUserId,
+    required String googleUserId,
     required double bankrollDollars,
+    required bool termsAccepted,
     required DateTime createdAt,
   }) = _UserProfile;
 

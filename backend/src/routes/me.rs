@@ -38,3 +38,13 @@ pub async fn update_me(
     let me = db::users::update_bankroll(pool, &user.google_user_id, body.bankroll_dollars).await?;
     Ok(Json(ApiResponse::ok(me)))
 }
+
+pub async fn accept_terms(
+    State(state): State<AppState>,
+    Extension(user): Extension<AuthUser>,
+) -> Result<Json<ApiResponse<User>>, AppError> {
+    let pool = db::require(&state.db)?;
+    db::users::get_or_create(pool, &user.google_user_id).await?;
+    let me = db::users::accept_terms(pool, &user.google_user_id).await?;
+    Ok(Json(ApiResponse::ok(me)))
+}
