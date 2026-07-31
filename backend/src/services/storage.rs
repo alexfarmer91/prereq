@@ -76,6 +76,8 @@ impl AvatarStorage {
             )));
         }
 
-        Ok(format!("{project_url}/storage/v1/object/public/{BUCKET}/{path}"))
+        Ok(format!(
+            "{project_url}/storage/v1/object/public/{BUCKET}/{path}"
+        ))
     }
 }
