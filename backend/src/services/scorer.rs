@@ -152,8 +152,7 @@ async fn score_market(
 
         // The server-side search loop pauses after its iteration limit; echo
         // the assistant turn back unchanged and it resumes where it left off.
-        if payload.stop_reason.as_deref() == Some("pause_turn")
-            && round_trips <= MAX_CONTINUATIONS
+        if payload.stop_reason.as_deref() == Some("pause_turn") && round_trips <= MAX_CONTINUATIONS
         {
             messages.push(json!({ "role": "assistant", "content": payload.content }));
             continue;
