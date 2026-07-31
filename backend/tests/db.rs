@@ -2,11 +2,22 @@
 //! (CI provides a Postgres service container; locally they no-op).
 
 use prereq_backend::db;
+use prereq_backend::middleware::auth::AuthUser;
 
 fn test_db_url() -> Option<String> {
     std::env::var("TEST_DATABASE_URL")
         .ok()
         .filter(|u| !u.is_empty())
+}
+
+fn test_auth_user(google_user_id: &str) -> AuthUser {
+    AuthUser {
+        google_user_id: google_user_id.to_string(),
+        email: None,
+        email_verified: false,
+        display_name: None,
+        avatar_url: None,
+    }
 }
 
 #[tokio::test]
@@ -19,8 +30,12 @@ async fn user_watchlist_bets_performance_roundtrip() {
     let pool = db::init(Some(&url)).await.expect("db connect + migrate");
 
     // User provisioning is idempotent.
-    let user = db::users::get_or_create(&pool, "it_user_1").await.unwrap();
-    let again = db::users::get_or_create(&pool, "it_user_1").await.unwrap();
+    let user = db::users::get_or_create(&pool, &test_auth_user("it_user_1"))
+        .await
+        .unwrap();
+    let again = db::users::get_or_create(&pool, &test_auth_user("it_user_1"))
+        .await
+        .unwrap();
     assert_eq!(user.id, again.id);
 
     let user = db::users::update_bankroll(&pool, "it_user_1", 2500.0)
@@ -87,7 +102,9 @@ async fn user_watchlist_bets_performance_roundtrip() {
     assert!(report.pnl.total_returned > 0.0);
 
     // A user can never touch another user's bets.
-    let other = db::users::get_or_create(&pool, "it_user_2").await.unwrap();
+    let other = db::users::get_or_create(&pool, &test_auth_user("it_user_2"))
+        .await
+        .unwrap();
     assert!(
         db::bets::update_outcome(&pool, other.id, bet.id, "loss", None)
             .await
