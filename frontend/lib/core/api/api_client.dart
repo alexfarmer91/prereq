@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../../shared/models/arb.dart';
 import '../../shared/models/bet.dart';
@@ -74,6 +76,46 @@ class ApiClient {
       throw ApiException('Network error: $e');
     }
 
+    return _unwrapEnvelope(response);
+  }
+
+  /// POSTs a single file as multipart/form-data (used for avatar uploads,
+  /// where the body isn't JSON-encodable via [_send]).
+  Future<dynamic> _sendMultipart(
+    String method,
+    String path, {
+    required String fieldName,
+    required Uint8List bytes,
+    required String filename,
+    required String contentType,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(path: path);
+    final request = http.MultipartRequest(method, uri);
+
+    final token = await getToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(http.MultipartFile.fromBytes(
+      fieldName,
+      bytes,
+      filename: filename,
+      contentType: MediaType.parse(contentType),
+    ));
+
+    http.Response response;
+    try {
+      response = await http.Response.fromStream(await _http.send(request));
+    } on http.ClientException catch (e) {
+      throw ApiException('Could not reach the server: ${e.message}');
+    } catch (e) {
+      throw ApiException('Network error: $e');
+    }
+
+    return _unwrapEnvelope(response);
+  }
+
+  dynamic _unwrapEnvelope(http.Response response) {
     Map<String, dynamic>? envelope;
     try {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
@@ -143,6 +185,28 @@ class ApiClient {
 
   Future<UserProfile> acceptTerms() async {
     final data = await _send('POST', '/me/accept-terms');
+    return UserProfile.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<UserProfile> updateProfile({required String displayName}) async {
+    final data = await _send('PATCH', '/me/profile',
+        body: {'display_name': displayName});
+    return UserProfile.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<UserProfile> uploadAvatar({
+    required Uint8List bytes,
+    required String filename,
+    required String contentType,
+  }) async {
+    final data = await _sendMultipart(
+      'POST',
+      '/me/avatar',
+      fieldName: 'file',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+    );
     return UserProfile.fromJson(data as Map<String, dynamic>);
   }
 

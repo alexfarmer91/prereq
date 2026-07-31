@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/user_profile.dart';
@@ -23,6 +25,30 @@ class Profile extends _$Profile {
   /// Accept the terms via `POST /me/accept-terms` and update local state.
   Future<void> acceptTerms() async {
     final updated = await ref.read(apiClientProvider).acceptTerms();
+    state = AsyncData(updated);
+  }
+
+  /// Persist a chosen display name via `PATCH /me/profile` and update local
+  /// state.
+  Future<void> updateDisplayName(String displayName) async {
+    final updated = await ref
+        .read(apiClientProvider)
+        .updateProfile(displayName: displayName);
+    state = AsyncData(updated);
+  }
+
+  /// Upload a profile picture via `POST /me/avatar` and update local state
+  /// with the resulting `avatarUrl`.
+  Future<void> uploadAvatar({
+    required Uint8List bytes,
+    required String filename,
+    required String contentType,
+  }) async {
+    final updated = await ref.read(apiClientProvider).uploadAvatar(
+          bytes: bytes,
+          filename: filename,
+          contentType: contentType,
+        );
     state = AsyncData(updated);
   }
 }

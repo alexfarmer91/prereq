@@ -6,7 +6,10 @@ pub mod models;
 pub mod routes;
 pub mod services;
 
-use services::{cache::Cache, jwks::JwksStore, market_store::MarketStore, telemetry::Telemetry};
+use services::{
+    cache::Cache, jwks::JwksStore, market_store::MarketStore, storage::AvatarStorage,
+    telemetry::Telemetry,
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -20,6 +23,7 @@ pub struct AppState {
     pub markets: MarketStore,
     pub anthropic_api_key: Option<String>,
     pub telemetry: Telemetry,
+    pub avatar_storage: AvatarStorage,
 }
 
 impl AppState {
@@ -35,6 +39,7 @@ impl AppState {
             markets: MarketStore::default(),
             anthropic_api_key: None,
             telemetry: Telemetry::default(),
+            avatar_storage: AvatarStorage::default(),
         }
     }
 }

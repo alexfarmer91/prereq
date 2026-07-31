@@ -38,6 +38,11 @@ async fn main() {
         anthropic_api_key: config
             .anthropic_api_key
             .filter(|k| !k.is_empty() && !k.ends_with("...")),
+        avatar_storage: services::storage::AvatarStorage::new(
+            http.clone(),
+            config.supabase_project_url,
+            config.supabase_service_role_key,
+        ),
         telemetry: services::telemetry::Telemetry::new(http, config.mixpanel_token),
     };
 
