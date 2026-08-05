@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Explicit trusted-CA policy (system store) instead of relying on
+         platform defaults, and cleartext HTTP disallowed everywhere except
+         localhost/the emulator host alias, which are only reachable when the
+         app is debuggable (see AppConfig.apiBaseUrl's localhost default). -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <debug-overrides>
+        <domain-config cleartextTrafficPermitted="true">
+            <domain includeSubdomains="false">localhost</domain>
+            <domain includeSubdomains="false">10.0.2.2</domain>
+        </domain-config>
+    </debug-overrides>
+</network-security-config>
