@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'core/analytics/analytics.dart';
 import 'features/auth/login_screen.dart';
-import 'features/auth/terms_screen.dart';
+import 'features/auth/onboarding_screen.dart';
 import 'features/market_detail/market_detail_screen.dart';
 import 'features/performance/performance_screen.dart';
 import 'features/position_sizer/sizer_screen.dart';
@@ -31,7 +31,7 @@ GoRouter router(Ref ref) {
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
       final onLogin = state.matchedLocation == '/login';
-      final onTerms = state.matchedLocation == '/terms';
+      final onOnboarding = state.matchedLocation == '/onboarding';
 
       switch (auth.status) {
         case AuthStatus.initializing:
@@ -42,13 +42,19 @@ GoRouter router(Ref ref) {
         case AuthStatus.unconfigured:
           return onLogin ? null : '/login';
         case AuthStatus.signedIn:
-          // Unknown (still loading/errored) is treated as accepted so the
+          // Unknown (still loading/errored) is treated as onboarded so the
           // app isn't blocked before the profile has loaded even once; the
-          // redirect re-evaluates as soon as it resolves to false.
-          final termsAccepted =
-              ref.read(profileProvider).value?.termsAccepted ?? true;
-          if (!termsAccepted) return onTerms ? null : '/terms';
-          return (onLogin || onTerms) ? '/scanner' : null;
+          // redirect re-evaluates as soon as it resolves.
+          final profile = ref.read(profileProvider).value;
+          // `lastSeenAt == null` is true only for the very first `/me` response
+          // a brand-new account ever gets (see db/users.rs get_or_create) — a
+          // guard against the rare case terms somehow got flagged accepted
+          // before the rest of onboarding ran. `termsAccepted == false` is the
+          // durable signal that survives across app restarts mid-flow.
+          final needsOnboarding =
+              profile == null ? false : (!profile.termsAccepted || profile.lastSeenAt == null);
+          if (needsOnboarding) return onOnboarding ? null : '/onboarding';
+          return (onLogin || onOnboarding) ? '/scanner' : null;
       }
     },
     routes: [
@@ -57,8 +63,8 @@ GoRouter router(Ref ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
-        path: '/terms',
-        builder: (context, state) => const TermsScreen(),
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/',
