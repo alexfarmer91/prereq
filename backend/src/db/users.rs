@@ -87,7 +87,11 @@ pub async fn update_bankroll(
 /// exercised across tiers without a real subscription change. Callers must
 /// check `is_admin` themselves before invoking this — it has no gate of its
 /// own beyond the schema's plan CHECK constraint.
-pub async fn update_plan(pool: &PgPool, google_user_id: &str, plan: &str) -> Result<User, AppError> {
+pub async fn update_plan(
+    pool: &PgPool,
+    google_user_id: &str,
+    plan: &str,
+) -> Result<User, AppError> {
     let user = sqlx::query_as::<_, User>(&format!(
         "UPDATE users SET plan = $2, updated_at = NOW() WHERE google_user_id = $1
          RETURNING {USER_COLUMNS}"
