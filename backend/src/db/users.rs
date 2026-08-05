@@ -14,6 +14,7 @@ pub struct User {
     pub bankroll_dollars: f64,
     /// Product tier: 'free' | 'edge' | 'pro' (constrained by the schema).
     pub plan: String,
+    pub is_admin: bool,
     pub terms_accepted: bool,
     pub email: Option<String>,
     pub email_verified: bool,
@@ -32,8 +33,8 @@ impl User {
 }
 
 const USER_COLUMNS: &str = "id, google_user_id, bankroll_dollars::float8 AS bankroll_dollars, \
-     plan, terms_accepted, email, email_verified, display_name, avatar_url, created_at, \
-     updated_at, last_seen_at";
+     plan, is_admin, terms_accepted, email, email_verified, display_name, avatar_url, \
+     created_at, updated_at, last_seen_at";
 
 /// Upserts on every authenticated request — keeps `email`/`email_verified`
 /// in sync with whatever Google's token carries now, since those are tied to
@@ -77,6 +78,22 @@ pub async fn update_bankroll(
     ))
     .bind(google_user_id)
     .bind(bankroll_dollars)
+    .fetch_one(pool)
+    .await?;
+    Ok(user)
+}
+
+/// Admin-only: overrides the caller's own `plan` so features can be
+/// exercised across tiers without a real subscription change. Callers must
+/// check `is_admin` themselves before invoking this — it has no gate of its
+/// own beyond the schema's plan CHECK constraint.
+pub async fn update_plan(pool: &PgPool, google_user_id: &str, plan: &str) -> Result<User, AppError> {
+    let user = sqlx::query_as::<_, User>(&format!(
+        "UPDATE users SET plan = $2, updated_at = NOW() WHERE google_user_id = $1
+         RETURNING {USER_COLUMNS}"
+    ))
+    .bind(google_user_id)
+    .bind(plan)
     .fetch_one(pool)
     .await?;
     Ok(user)

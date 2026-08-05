@@ -5,6 +5,12 @@ allprojects {
     }
 }
 
+subprojects {
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

@@ -74,6 +74,34 @@ pub async fn update_profile(
     Ok(Json(ApiResponse::ok(me)))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UpdatePlan {
+    pub plan: String,
+}
+
+/// Admin-only: lets the caller preview their own account under a different
+/// plan tier, so features can be verified across plans without a real
+/// subscription. Restricted to the caller's own row — an admin can flip
+/// their own plan, never anyone else's.
+pub async fn update_plan(
+    State(state): State<AppState>,
+    Extension(user): Extension<AuthUser>,
+    Json(body): Json<UpdatePlan>,
+) -> Result<Json<ApiResponse<User>>, AppError> {
+    let pool = db::require(&state.db)?;
+    let me = db::users::get_or_create(pool, &user).await?;
+    if !me.is_admin {
+        return Err(AppError::Forbidden("Admin access required".into()));
+    }
+    if !matches!(body.plan.as_str(), "free" | "edge" | "pro") {
+        return Err(AppError::BadRequest(
+            "plan must be one of: free, edge, pro".into(),
+        ));
+    }
+    let me = db::users::update_plan(pool, &user.google_user_id, &body.plan).await?;
+    Ok(Json(ApiResponse::ok(me)))
+}
+
 /// Max upload size for a profile picture.
 const MAX_AVATAR_BYTES: usize = 5 * 1024 * 1024;
 

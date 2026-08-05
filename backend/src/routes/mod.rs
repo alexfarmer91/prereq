@@ -24,6 +24,7 @@ pub fn app_router(state: AppState) -> Router {
         .route("/me", get(me::get_me).patch(me::update_me))
         .route("/me/accept-terms", post(me::accept_terms))
         .route("/me/profile", patch(me::update_profile))
+        .route("/me/plan", patch(me::update_plan))
         .route(
             "/me/avatar",
             post(me::upload_avatar).layer(DefaultBodyLimit::max(6 * 1024 * 1024)),
