@@ -45,6 +45,12 @@ class AuthState {
 class AuthController extends _$AuthController {
   GoogleSignInAccount? _account;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _sub;
+  Timer? _restoreDeadline;
+
+  /// How long the login screen waits on the silent session restore before
+  /// showing the sign-in button. A restore that lands after the deadline
+  /// still signs the user in via the auth event stream.
+  static const _restoreWindow = Duration(seconds: 3);
 
   @override
   AuthState build() {
@@ -76,10 +82,17 @@ class AuthController extends _$AuthController {
     // by the backend) and is the one value that must stay consistent across
     // platforms — but web specifically forbids passing it (asserts) and
     // wants the same value as `clientId` instead.
-    await GoogleSignIn.instance.initialize(
-      clientId: kIsWeb ? AppConfig.googleClientId : null,
-      serverClientId: kIsWeb ? null : AppConfig.googleClientId,
-    );
+    try {
+      await GoogleSignIn.instance.initialize(
+        clientId: kIsWeb ? AppConfig.googleClientId : null,
+        serverClientId: kIsWeb ? null : AppConfig.googleClientId,
+      );
+    } catch (_) {
+      // GIS failed to load (offline, blocked script) — show the sign-in
+      // button rather than spinning forever.
+      _endRestoreWait();
+      return;
+    }
 
     _sub = GoogleSignIn.instance.authenticationEvents.listen(
       _handleAuthEvent,
@@ -91,10 +104,26 @@ class AuthController extends _$AuthController {
     // Best-effort silent restore of a prior session. On web this never
     // resolves — GIS One Tap either fires an auth event on the stream above
     // or stays silent forever if there's nothing to restore — so the result
-    // (if any) is handled entirely by _handleAuthEvent, not here.
+    // (if any) is handled entirely by _handleAuthEvent, not here. The
+    // deadline keeps that "silent forever" case from pinning the login
+    // screen on its spinner.
+    _restoreDeadline = Timer(_restoreWindow, _endRestoreWait);
+    ref.onDispose(() => _restoreDeadline?.cancel());
     final restore = GoogleSignIn.instance.attemptLightweightAuthentication();
     if (restore != null) {
       unawaited(restore.catchError((_) => null));
+    }
+  }
+
+  /// If the silent restore hasn't produced a session yet, stop waiting and
+  /// let the login screen render the sign-in button. A no-op once any auth
+  /// event has moved the state past [AuthStatus.initializing].
+  void _endRestoreWait() {
+    if (state.status == AuthStatus.initializing) {
+      state = const AuthState(
+        status: AuthStatus.signedOut,
+        mode: AuthMode.google,
+      );
     }
   }
 
