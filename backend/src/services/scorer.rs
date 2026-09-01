@@ -18,6 +18,10 @@ const MAX_SEARCHES_PER_SCORE: u32 = 3;
 /// Server-side tool turns can pause (`stop_reason: "pause_turn"`); resume at
 /// most this many times before treating the turn as final.
 const MAX_CONTINUATIONS: u32 = 5;
+/// Overrides the shared client's 30s default: a scoring turn with web search
+/// legitimately runs minutes, but must never hang forever — a single stuck
+/// call used to wedge the refresh loop and 502 every /markets request.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(180);
 
 /// Web search is opt-in (SCORER_WEB_SEARCH=true) for the automated scorer.
 /// The product direction is user-triggered research on paid plans; automated
@@ -122,6 +126,7 @@ async fn score_market(
         let response = state
             .http
             .post(ANTHROPIC_URL)
+            .timeout(REQUEST_TIMEOUT)
             .header("x-api-key", api_key)
             .header("anthropic-version", "2023-06-01")
             .json(&body)
