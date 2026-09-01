@@ -182,7 +182,7 @@ class PrereqLockup extends StatelessWidget {
     // Clear space: one bar-width, ≈ 20% of the mark.
     if (stacked) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [mark, SizedBox(height: markSize * 0.22), word],
       );

@@ -34,7 +34,9 @@ impl JwksStore {
 }
 
 async fn fetch() -> Result<jsonwebtoken::jwk::JwkSet, reqwest::Error> {
-    reqwest::Client::new()
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?
         .get(GOOGLE_JWKS_URL)
         .send()
         .await?

@@ -27,7 +27,15 @@ async fn main() {
     let db = db::init(config.database_url.as_deref()).await;
     let cache = Cache::connect(config.redis_url.as_deref()).await;
 
-    let http = reqwest::Client::new();
+    // Every upstream (Kalshi, Anthropic, Supabase, Mixpanel) shares this
+    // client. The total-request timeout is the backstop that keeps one stalled
+    // upstream from wedging the market refresh forever; the scorer raises it
+    // per-request for long Claude turns.
+    let http = reqwest::Client::builder()
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("failed to build HTTP client");
     let state = AppState {
         jwks: JwksStore::default(),
         google_client_id: config.google_client_id,
