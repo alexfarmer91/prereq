@@ -1,5 +1,6 @@
 pub mod bets;
 pub mod performance;
+pub mod scores;
 pub mod users;
 pub mod watchlist;
 

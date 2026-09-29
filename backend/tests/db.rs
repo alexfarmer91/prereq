@@ -111,3 +111,56 @@ async fn user_watchlist_bets_performance_roundtrip() {
             .is_err()
     );
 }
+
+#[tokio::test]
+async fn ai_scores_persist_and_return_latest() {
+    let Some(url) = test_db_url() else {
+        eprintln!("TEST_DATABASE_URL not set — skipping DB integration test");
+        return;
+    };
+    use prereq_backend::models::market::Score;
+
+    let pool = db::init(Some(&url)).await.expect("db connect + migrate");
+    let ticker = format!("IT-SCORE-{}", uuid::Uuid::new_v4());
+
+    let mut score = Score {
+        fair_probability: 0.6,
+        confidence: "medium".into(),
+        edge: 0.1,
+        ev_per_dollar: 0.2,
+        rationale: "first".into(),
+        signals: vec!["s1".into()],
+        risks: vec!["r1".into()],
+        scored_at: chrono::Utc::now() - chrono::Duration::hours(1),
+        market_price_at_score: Some(0.5),
+    };
+    let raw = serde_json::json!([{ "type": "text", "text": "{}" }]);
+    let new = |score: &Score| db::scores::NewScore {
+        market_ticker: &ticker,
+        market_title: "Integration test market",
+        score,
+        market_price_at_score: 0.5,
+        model: "test-model",
+        web_search_enabled: true,
+        web_search_count: 2,
+        input_tokens: 100,
+        output_tokens: 50,
+        raw_content: Some(&raw),
+    };
+    db::scores::insert(&pool, &new(&score)).await.unwrap();
+
+    score.rationale = "second".into();
+    score.scored_at = chrono::Utc::now();
+    db::scores::insert(&pool, &new(&score)).await.unwrap();
+
+    let latest = db::scores::latest(&pool, &ticker).await.unwrap().unwrap();
+    assert_eq!(latest.rationale, "second");
+    assert_eq!(latest.signals, vec!["s1"]);
+    assert_eq!(latest.market_price_at_score, Some(0.5));
+
+    let batch = db::scores::latest_for(&pool, &[ticker.clone(), "IT-NONE".into()])
+        .await
+        .unwrap();
+    assert_eq!(batch.len(), 1);
+    assert_eq!(batch[&ticker].rationale, "second");
+}

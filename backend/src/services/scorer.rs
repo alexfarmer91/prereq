@@ -1,9 +1,12 @@
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use chrono::Utc;
+use chrono::{DateTime, Utc};
+use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+use crate::db;
 use crate::error::AppError;
 use crate::models::market::{Market, Score};
 use crate::AppState;
@@ -12,7 +15,25 @@ const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 // claude-sonnet-4-20250514 is deprecated (retires 2026-06-15); Sonnet 5 is
 // its documented drop-in replacement and supports the web_search tool.
 const MODEL: &str = "claude-sonnet-5";
-const SCORE_TTL: Duration = Duration::from_secs(30 * 60);
+
+// --- Rescore policy -------------------------------------------------------
+// Every Claude score is persisted to Postgres (`ai_scores`) and reused until
+// it is genuinely stale; the 5-minute market refresh only reprices `edge`
+// against the live mid. Claude is called again only when:
+//   * the score is older than SCORE_MAX_AGE_HOURS (default 24h), or
+//   * the market has moved RESCORE_PRICE_MOVE since scoring, and the score is
+//     at least MIN_RESCORE_INTERVAL old (so a volatile market can't thrash).
+const DEFAULT_MAX_AGE_HOURS: i64 = 24;
+const MIN_RESCORE_INTERVAL: chrono::Duration = chrono::Duration::hours(1);
+/// Absolute move in the yes mid (dollars) that invalidates a score.
+const RESCORE_PRICE_MOVE: f64 = 0.05;
+/// After a failed scoring attempt, leave that ticker alone this long.
+const FAILURE_BACKOFF: Duration = Duration::from_secs(60 * 60);
+/// Billing/auth failures (e.g. "credit balance is too low") pause all scoring.
+const BILLING_PAUSE: Duration = Duration::from_secs(30 * 60);
+/// Rate-limit / overload responses pause all scoring briefly.
+const RATE_LIMIT_PAUSE: Duration = Duration::from_secs(5 * 60);
+const PAUSE_KEY: &str = "scorer:paused";
 /// Cost cap: web searches allowed per scored market.
 const MAX_SEARCHES_PER_SCORE: u32 = 3;
 /// Server-side tool turns can pause (`stop_reason: "pause_turn"`); resume at
@@ -31,29 +52,204 @@ fn web_search_enabled() -> bool {
     std::env::var("SCORER_WEB_SEARCH").as_deref() == Ok("true")
 }
 
-/// Score with cache-aside: Redis/memory first, Claude on miss.
+fn max_score_age() -> chrono::Duration {
+    let hours = std::env::var("SCORE_MAX_AGE_HOURS")
+        .ok()
+        .and_then(|v| v.parse::<i64>().ok())
+        .filter(|h| *h > 0)
+        .unwrap_or(DEFAULT_MAX_AGE_HOURS);
+    chrono::Duration::hours(hours)
+}
+
+fn cache_key(ticker: &str) -> String {
+    format!("score:{ticker}")
+}
+
+fn failure_key(ticker: &str) -> String {
+    format!("score_fail:{ticker}")
+}
+
+/// Whether a persisted score should be replaced by a fresh Claude call.
+pub fn is_stale(score: &Score, market: &Market, now: DateTime<Utc>) -> bool {
+    let age = now - score.scored_at;
+    if age >= max_score_age() {
+        return true;
+    }
+    if age < MIN_RESCORE_INTERVAL {
+        return false;
+    }
+    score
+        .market_price_at_score
+        .is_some_and(|p| (market.mid_price - p).abs() >= RESCORE_PRICE_MOVE)
+}
+
+/// Edge is deterministic given the model's fair probability — reprice it
+/// against the live mid rather than serving the value from scoring time.
+pub fn refresh_edge(score: &mut Score, market: &Market) {
+    score.edge = score.fair_probability - market.mid_price;
+}
+
+/// True while a billing/auth or rate-limit failure has paused all scoring.
+pub async fn is_paused(state: &AppState) -> bool {
+    state.cache.get(PAUSE_KEY).await.is_some()
+}
+
+async fn pause(state: &AppState, reason: &str, ttl: Duration) {
+    tracing::error!(
+        "Pausing AI scoring for {}m: {reason}",
+        ttl.as_secs() / 60
+    );
+    state.cache.set(PAUSE_KEY, reason, ttl).await;
+}
+
+async fn warm_cache(state: &AppState, ticker: &str, score: &Score) {
+    if let Ok(serialized) = serde_json::to_string(score) {
+        let ttl = max_score_age().to_std().unwrap_or(FAILURE_BACKOFF);
+        state.cache.set(&cache_key(ticker), &serialized, ttl).await;
+    }
+}
+
+/// Latest persisted score for a ticker — hot cache, then Postgres. Never
+/// calls Claude. `edge` is relative to the price at scoring time; callers
+/// reprice it with [`refresh_edge`].
+pub async fn stored_score(state: &AppState, ticker: &str) -> Option<Score> {
+    if let Some(cached) = state.cache.get(&cache_key(ticker)).await {
+        if let Ok(score) = serde_json::from_str::<Score>(&cached) {
+            return Some(score);
+        }
+    }
+    let pool = state.db.as_ref()?;
+    match db::scores::latest(pool, ticker).await {
+        Ok(Some(score)) => {
+            warm_cache(state, ticker, &score).await;
+            Some(score)
+        }
+        Ok(None) => None,
+        Err(e) => {
+            tracing::warn!("Loading stored score for {ticker} failed: {e}");
+            None
+        }
+    }
+}
+
+/// Attach the latest persisted score (repriced to the live mid) to each
+/// market. Hot-cache hits are free; misses go to Postgres in one query.
+pub async fn attach_stored_scores(state: &AppState, markets: &mut [Market]) {
+    let mut misses = Vec::new();
+    for market in markets.iter_mut() {
+        if let Some(cached) = state.cache.get(&cache_key(&market.ticker)).await {
+            market.score = serde_json::from_str(&cached).ok();
+        }
+        if market.score.is_none() {
+            misses.push(market.ticker.clone());
+        }
+    }
+
+    let from_db: HashMap<String, Score> = match (&state.db, misses.is_empty()) {
+        (Some(pool), false) => match db::scores::latest_for(pool, &misses).await {
+            Ok(found) => found,
+            Err(e) => {
+                tracing::warn!("Loading stored scores failed: {e}");
+                HashMap::new()
+            }
+        },
+        _ => HashMap::new(),
+    };
+
+    for market in markets.iter_mut() {
+        if market.score.is_none() {
+            if let Some(score) = from_db.get(&market.ticker) {
+                warm_cache(state, &market.ticker, score).await;
+                market.score = Some(score.clone());
+            }
+        }
+        let mid = market.mid_price;
+        if let Some(score) = market.score.as_mut() {
+            score.edge = score.fair_probability - mid;
+        }
+    }
+}
+
+/// Persisted score when it is still fresh; otherwise one Claude call, whose
+/// result is written to Postgres and the hot cache before returning.
+///
+/// `Ok(None)` means no score is available and none was attempted (scoring
+/// is paused, or this ticker failed recently). A failed rescore falls back to
+/// the stale score rather than dropping it.
 pub async fn get_or_score(
     state: &AppState,
     api_key: &str,
     market: &Market,
-) -> Result<Score, AppError> {
-    let key = format!("score:{}", market.ticker);
-
-    if let Some(cached) = state.cache.get(&key).await {
-        if let Ok(score) = serde_json::from_str::<Score>(&cached) {
-            return Ok(score);
+) -> Result<Option<Score>, AppError> {
+    let existing = stored_score(state, &market.ticker).await.map(|mut s| {
+        refresh_edge(&mut s, market);
+        s
+    });
+    if let Some(score) = &existing {
+        if !is_stale(score, market, Utc::now()) {
+            return Ok(existing);
         }
+    }
+
+    if is_paused(state).await
+        || state.cache.get(&failure_key(&market.ticker)).await.is_some()
+    {
+        return Ok(existing);
     }
 
     let started = Instant::now();
     let result = score_market(state, api_key, market).await;
     track_scored(state, market, &result, started.elapsed().as_millis() as u64);
 
-    let score = result?.score;
-    if let Ok(serialized) = serde_json::to_string(&score) {
-        state.cache.set(&key, &serialized, SCORE_TTL).await;
+    match result {
+        Ok(outcome) => {
+            persist(state, market, &outcome).await;
+            Ok(Some(outcome.score))
+        }
+        Err(e) => {
+            // A global pause already covers every ticker; only back off this
+            // one for ticker-specific failures (bad JSON, timeouts, ...).
+            if !is_paused(state).await {
+                state
+                    .cache
+                    .set(&failure_key(&market.ticker), "1", FAILURE_BACKOFF)
+                    .await;
+            }
+            match existing {
+                Some(stale) => {
+                    tracing::warn!(
+                        "Rescoring {} failed, serving previous score: {e}",
+                        market.ticker
+                    );
+                    Ok(Some(stale))
+                }
+                None => Err(e),
+            }
+        }
     }
-    Ok(score)
+}
+
+async fn persist(state: &AppState, market: &Market, outcome: &ScoreOutcome) {
+    warm_cache(state, &market.ticker, &outcome.score).await;
+    let Some(pool) = state.db.as_ref() else {
+        return;
+    };
+    let new = db::scores::NewScore {
+        market_ticker: &market.ticker,
+        market_title: &market.title,
+        score: &outcome.score,
+        market_price_at_score: market.mid_price,
+        model: MODEL,
+        web_search_enabled: web_search_enabled(),
+        web_search_count: outcome.web_searches as i32,
+        input_tokens: outcome.input_tokens as i64,
+        output_tokens: outcome.output_tokens as i64,
+        raw_content: Some(&outcome.raw_content),
+    };
+    // The score is already cached, so a DB hiccup only costs durability.
+    if let Err(e) = db::scores::insert(pool, &new).await {
+        tracing::error!("Persisting score for {} failed: {e}", market.ticker);
+    }
 }
 
 /// A completed scoring run plus the usage it consumed (for telemetry).
@@ -63,6 +259,9 @@ struct ScoreOutcome {
     output_tokens: u64,
     web_searches: u64,
     round_trips: u32,
+    /// Every assistant content block across all turns (text, search queries,
+    /// results, citations), with opaque `encrypted_*` payloads stripped.
+    raw_content: Value,
 }
 
 fn track_scored(
@@ -107,6 +306,7 @@ async fn score_market(
     let mut output_tokens = 0u64;
     let mut web_searches = 0u64;
     let mut round_trips = 0u32;
+    let mut raw_content: Vec<Value> = Vec::new();
 
     let payload = loop {
         round_trips += 1;
@@ -137,6 +337,11 @@ async fn score_market(
         let status = response.status();
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
+            // Account-level failures hit every market identically — stop the
+            // whole scoring pass instead of re-sending each one every refresh.
+            if let Some(ttl) = pause_for(status, &body) {
+                pause(state, &format!("Anthropic returned {status}"), ttl).await;
+            }
             return Err(AppError::Internal(format!(
                 "Anthropic returned {status}: {body}"
             )));
@@ -154,6 +359,7 @@ async fn score_market(
         if let Some(server_tools) = &payload.usage.server_tool_use {
             web_searches += server_tools.web_search_requests;
         }
+        raw_content.extend(payload.content.iter().cloned());
 
         // The server-side search loop pauses after its iteration limit; echo
         // the assistant turn back unchanged and it resumes where it left off.
@@ -185,13 +391,43 @@ async fn score_market(
     // the LLM's arithmetic.
     score.edge = score.fair_probability - market.mid_price;
     score.scored_at = Utc::now();
+    score.market_price_at_score = Some(market.mid_price);
+
+    let mut raw_content = Value::Array(raw_content);
+    strip_encrypted(&mut raw_content);
     Ok(ScoreOutcome {
         score,
         input_tokens,
         output_tokens,
         web_searches,
         round_trips,
+        raw_content,
     })
+}
+
+/// How long to pause all scoring after a non-success Anthropic response, or
+/// `None` for failures specific to one request.
+fn pause_for(status: StatusCode, body: &str) -> Option<Duration> {
+    match status {
+        StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => Some(BILLING_PAUSE),
+        StatusCode::BAD_REQUEST if body.contains("credit balance") => Some(BILLING_PAUSE),
+        StatusCode::TOO_MANY_REQUESTS => Some(RATE_LIMIT_PAUSE),
+        s if s.as_u16() == 529 => Some(RATE_LIMIT_PAUSE),
+        _ => None,
+    }
+}
+
+/// Web search results carry large opaque `encrypted_*` blobs that are only
+/// useful for echoing back to the API; drop them before persisting.
+fn strip_encrypted(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            map.retain(|k, _| !k.starts_with("encrypted_"));
+            map.values_mut().for_each(strip_encrypted);
+        }
+        Value::Array(items) => items.iter_mut().for_each(strip_encrypted),
+        _ => {}
+    }
 }
 
 fn build_prompt(market: &Market) -> String {
@@ -291,6 +527,110 @@ mod tests {
         let score = parse_score(text).expect("should parse");
         assert!((score.fair_probability - 0.4).abs() < 1e-9);
         assert!(score.signals.is_empty());
+    }
+
+    fn market_at(mid: f64) -> Market {
+        Market {
+            ticker: "T".into(),
+            event_ticker: "E".into(),
+            title: "T".into(),
+            yes_bid: mid,
+            yes_ask: mid,
+            no_bid: 1.0 - mid,
+            no_ask: 1.0 - mid,
+            mid_price: mid,
+            spread: 0.0,
+            volume_24h: 0.0,
+            close_time: Utc::now().to_rfc3339(),
+            rules_primary: None,
+            category: "Politics".into(),
+            score: None,
+        }
+    }
+
+    fn score_at(price: f64, age: chrono::Duration) -> Score {
+        Score {
+            fair_probability: 0.6,
+            confidence: "medium".into(),
+            edge: 0.6 - price,
+            ev_per_dollar: 0.0,
+            rationale: String::new(),
+            signals: vec![],
+            risks: vec![],
+            scored_at: Utc::now() - age,
+            market_price_at_score: Some(price),
+        }
+    }
+
+    #[test]
+    fn fresh_score_is_reused_even_if_price_moved() {
+        let score = score_at(0.50, chrono::Duration::minutes(10));
+        assert!(!is_stale(&score, &market_at(0.70), Utc::now()));
+    }
+
+    #[test]
+    fn score_is_stale_after_max_age() {
+        let score = score_at(0.50, chrono::Duration::hours(25));
+        assert!(is_stale(&score, &market_at(0.50), Utc::now()));
+    }
+
+    #[test]
+    fn big_price_move_invalidates_after_min_interval() {
+        let score = score_at(0.50, chrono::Duration::hours(2));
+        assert!(!is_stale(&score, &market_at(0.52), Utc::now()));
+        assert!(is_stale(&score, &market_at(0.56), Utc::now()));
+    }
+
+    #[test]
+    fn edge_is_repriced_to_live_mid() {
+        let mut score = score_at(0.50, chrono::Duration::hours(2));
+        refresh_edge(&mut score, &market_at(0.40));
+        assert!((score.edge - 0.20).abs() < 1e-9);
+    }
+
+    #[test]
+    fn account_failures_pause_scoring() {
+        let credit = r#"{"error":{"message":"Your credit balance is too low"}}"#;
+        assert_eq!(
+            pause_for(StatusCode::BAD_REQUEST, credit),
+            Some(BILLING_PAUSE)
+        );
+        assert_eq!(pause_for(StatusCode::UNAUTHORIZED, ""), Some(BILLING_PAUSE));
+        assert_eq!(
+            pause_for(StatusCode::TOO_MANY_REQUESTS, ""),
+            Some(RATE_LIMIT_PAUSE)
+        );
+        assert_eq!(pause_for(StatusCode::BAD_REQUEST, "bad prompt"), None);
+        assert_eq!(pause_for(StatusCode::INTERNAL_SERVER_ERROR, ""), None);
+    }
+
+    #[test]
+    fn strips_encrypted_search_payloads() {
+        let mut v = json!([{
+            "type": "web_search_tool_result",
+            "content": [{"url": "https://x", "title": "X", "encrypted_content": "blob"}],
+            "encrypted_index": "blob"
+        }]);
+        strip_encrypted(&mut v);
+        assert_eq!(
+            v,
+            json!([{
+                "type": "web_search_tool_result",
+                "content": [{"url": "https://x", "title": "X"}]
+            }])
+        );
+    }
+
+    #[tokio::test]
+    async fn stored_score_survives_via_cache_without_db() {
+        let state = AppState::disconnected().await;
+        assert!(stored_score(&state, "T").await.is_none());
+        let score = score_at(0.50, chrono::Duration::minutes(1));
+        warm_cache(&state, "T", &score).await;
+        let mut markets = vec![market_at(0.45)];
+        attach_stored_scores(&state, &mut markets).await;
+        let attached = markets[0].score.as_ref().expect("score attached");
+        assert!((attached.edge - 0.15).abs() < 1e-9);
     }
 
     #[test]

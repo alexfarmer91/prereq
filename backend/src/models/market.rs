@@ -42,6 +42,11 @@ pub struct Score {
     pub risks: Vec<String>,
     #[serde(default = "Utc::now")]
     pub scored_at: DateTime<Utc>,
+    /// Market mid when Claude scored it. `edge` is recomputed against the
+    /// live mid on every read; this anchors the move-since-scored rescore
+    /// check. Absent on scores cached before it existed.
+    #[serde(default)]
+    pub market_price_at_score: Option<f64>,
 }
 
 /// Clean market struct returned by our API.

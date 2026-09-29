@@ -1,0 +1,126 @@
+use std::collections::HashMap;
+
+use chrono::{DateTime, Utc};
+use serde_json::Value;
+use sqlx::PgPool;
+
+use crate::error::AppError;
+use crate::models::market::Score;
+
+/// One persisted Claude scoring run (see migrations/0008_ai_scores.sql).
+pub struct NewScore<'a> {
+    pub market_ticker: &'a str,
+    pub market_title: &'a str,
+    pub score: &'a Score,
+    pub market_price_at_score: f64,
+    pub model: &'a str,
+    pub web_search_enabled: bool,
+    pub web_search_count: i32,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+    pub raw_content: Option<&'a Value>,
+}
+
+#[derive(sqlx::FromRow)]
+struct ScoreRow {
+    market_ticker: String,
+    fair_probability: f64,
+    confidence: String,
+    ev_per_dollar: f64,
+    rationale: String,
+    signals: String,
+    risks: String,
+    market_price_at_score: f64,
+    scored_at: DateTime<Utc>,
+}
+
+impl ScoreRow {
+    /// `edge` is left relative to the price at scoring time; callers
+    /// recompute it against the live mid (`scorer::refresh_edge`).
+    fn into_score(self) -> (String, Score) {
+        let score = Score {
+            fair_probability: self.fair_probability,
+            confidence: self.confidence,
+            edge: self.fair_probability - self.market_price_at_score,
+            ev_per_dollar: self.ev_per_dollar,
+            rationale: self.rationale,
+            signals: serde_json::from_str(&self.signals).unwrap_or_default(),
+            risks: serde_json::from_str(&self.risks).unwrap_or_default(),
+            scored_at: self.scored_at,
+            market_price_at_score: Some(self.market_price_at_score),
+        };
+        (self.market_ticker, score)
+    }
+}
+
+// JSONB columns round-trip as text so no extra sqlx feature is needed.
+const COLUMNS: &str = "market_ticker, fair_probability, confidence, ev_per_dollar, \
+    rationale, signals::text AS signals, risks::text AS risks, \
+    market_price_at_score, scored_at";
+
+pub async fn insert(pool: &PgPool, new: &NewScore<'_>) -> Result<(), AppError> {
+    let signals = serde_json::to_string(&new.score.signals).unwrap_or_else(|_| "[]".into());
+    let risks = serde_json::to_string(&new.score.risks).unwrap_or_else(|_| "[]".into());
+    let raw = new.raw_content.map(Value::to_string);
+    sqlx::query(
+        "INSERT INTO ai_scores (
+            market_ticker, market_title, fair_probability, confidence, ev_per_dollar,
+            rationale, signals, risks, market_price_at_score, model,
+            web_search_enabled, web_search_count, input_tokens, output_tokens,
+            raw_content, scored_at
+         ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10,
+            $11, $12, $13, $14, $15::jsonb, $16
+         )",
+    )
+    .bind(new.market_ticker)
+    .bind(new.market_title)
+    .bind(new.score.fair_probability)
+    .bind(&new.score.confidence)
+    .bind(new.score.ev_per_dollar)
+    .bind(&new.score.rationale)
+    .bind(signals)
+    .bind(risks)
+    .bind(new.market_price_at_score)
+    .bind(new.model)
+    .bind(new.web_search_enabled)
+    .bind(new.web_search_count)
+    .bind(new.input_tokens)
+    .bind(new.output_tokens)
+    .bind(raw)
+    .bind(new.score.scored_at)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Most recent score for one ticker.
+pub async fn latest(pool: &PgPool, ticker: &str) -> Result<Option<Score>, AppError> {
+    let row = sqlx::query_as::<_, ScoreRow>(&format!(
+        "SELECT {COLUMNS} FROM ai_scores
+         WHERE market_ticker = $1 ORDER BY scored_at DESC LIMIT 1"
+    ))
+    .bind(ticker)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.map(|r| r.into_score().1))
+}
+
+/// Most recent score for each of `tickers`, in one round trip.
+pub async fn latest_for(
+    pool: &PgPool,
+    tickers: &[String],
+) -> Result<HashMap<String, Score>, AppError> {
+    if tickers.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let rows = sqlx::query_as::<_, ScoreRow>(&format!(
+        "SELECT DISTINCT ON (market_ticker) {COLUMNS} FROM ai_scores
+         WHERE market_ticker = ANY($1)
+         ORDER BY market_ticker, scored_at DESC"
+    ))
+    .bind(tickers)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows.into_iter().map(ScoreRow::into_score).collect())
+}
