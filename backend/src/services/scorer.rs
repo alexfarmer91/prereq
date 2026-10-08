@@ -15,6 +15,10 @@ const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 // claude-sonnet-4-20250514 is deprecated (retires 2026-06-15); Sonnet 5 is
 // its documented drop-in replacement and supports the web_search tool.
 const MODEL: &str = "claude-sonnet-5";
+/// Recorded on every attempt. Bump whenever `build_prompt`, its inputs, or
+/// the model change, so forecasts from different setups are never pooled in
+/// evaluation. Rows without a version predate the ledger (legacy).
+pub const PROMPT_VERSION: &str = "2";
 
 // --- Rescore policy -------------------------------------------------------
 // Every Claude score is persisted to Postgres (`ai_scores`) and reused until
@@ -116,10 +120,7 @@ pub async fn is_paused(state: &AppState) -> bool {
 }
 
 async fn pause(state: &AppState, reason: &str, ttl: Duration) {
-    tracing::error!(
-        "Pausing AI scoring for {}m: {reason}",
-        ttl.as_secs() / 60
-    );
+    tracing::error!("Pausing AI scoring for {}m: {reason}", ttl.as_secs() / 60);
     state.cache.set(PAUSE_KEY, reason, ttl).await;
 }
 
@@ -213,21 +214,27 @@ pub async fn get_or_score(
     }
 
     if is_paused(state).await
-        || state.cache.get(&failure_key(&market.ticker)).await.is_some()
+        || state
+            .cache
+            .get(&failure_key(&market.ticker))
+            .await
+            .is_some()
     {
         return Ok(existing);
     }
 
+    let requested_at = Utc::now();
     let started = Instant::now();
     let result = score_market(state, api_key, market).await;
     track_scored(state, market, &result, started.elapsed().as_millis() as u64);
 
     match result {
         Ok(outcome) => {
-            persist(state, market, &outcome).await;
+            persist(state, market, requested_at, &outcome).await;
             Ok(Some(outcome.score))
         }
         Err(e) => {
+            persist_failure(state, market, requested_at, &e).await;
             // A global pause already covers every ticker; only back off this
             // one for ticker-specific failures (bad JSON, timeouts, ...).
             if !is_paused(state).await {
@@ -250,10 +257,28 @@ pub async fn get_or_score(
     }
 }
 
-async fn persist(state: &AppState, market: &Market, outcome: &ScoreOutcome) {
+async fn persist(
+    state: &AppState,
+    market: &Market,
+    requested_at: DateTime<Utc>,
+    outcome: &ScoreOutcome,
+) {
     warm_cache(state, &market.ticker, &outcome.score).await;
     let Some(pool) = state.db.as_ref() else {
         return;
+    };
+    let context = db::scores::ForecastContext {
+        requested_at,
+        prompt_version: PROMPT_VERSION,
+        event_ticker: &market.event_ticker,
+        category: &market.category,
+        market_close_time: DateTime::parse_from_rfc3339(&market.close_time)
+            .ok()
+            .map(|t| t.with_timezone(&Utc)),
+        yes_bid: market.yes_bid,
+        yes_ask: market.yes_ask,
+        no_bid: market.no_bid,
+        no_ask: market.no_ask,
     };
     let new = db::scores::NewScore {
         market_ticker: &market.ticker,
@@ -266,10 +291,55 @@ async fn persist(state: &AppState, market: &Market, outcome: &ScoreOutcome) {
         input_tokens: outcome.input_tokens as i64,
         output_tokens: outcome.output_tokens as i64,
         raw_content: Some(&outcome.raw_content),
+        context,
     };
     // The score is already cached, so a DB hiccup only costs durability.
     if let Err(e) = db::scores::insert(pool, &new).await {
         tracing::error!("Persisting score for {} failed: {e}", market.ticker);
+    }
+}
+
+/// Record a failed attempt so failure rates and coverage stay measurable.
+async fn persist_failure(
+    state: &AppState,
+    market: &Market,
+    requested_at: DateTime<Utc>,
+    error: &AppError,
+) {
+    let Some(pool) = state.db.as_ref() else {
+        return;
+    };
+    let message = error.to_string();
+    let detail: String = message.chars().take(500).collect();
+    let failure = db::scores::NewFailure {
+        market_ticker: &market.ticker,
+        requested_at,
+        model: MODEL,
+        prompt_version: PROMPT_VERSION,
+        web_search_enabled: web_search_enabled(),
+        error_kind: failure_kind(&message),
+        error_detail: &detail,
+        market_price_at_request: market.mid_price,
+    };
+    if let Err(e) = db::scores::insert_failure(pool, &failure).await {
+        tracing::error!("Persisting score failure for {} failed: {e}", market.ticker);
+    }
+}
+
+/// Bucket a scoring error by the messages `score_market` produces.
+fn failure_kind(message: &str) -> &'static str {
+    if message.contains("Unparseable score") {
+        "parse_failure"
+    } else if message.contains("Out-of-range fair_probability") {
+        "invalid_probability"
+    } else if message.contains("Anthropic returned") {
+        "provider_error"
+    } else if message.contains("Anthropic request failed")
+        || message.contains("Anthropic response parse error")
+    {
+        "request_failed"
+    } else {
+        "other"
     }
 }
 
@@ -649,6 +719,34 @@ mod tests {
         assert!(!valid_probability(62.0)); // percent instead of a fraction
         assert!(!valid_probability(f64::NAN));
         assert!(!valid_probability(f64::INFINITY));
+    }
+
+    #[test]
+    fn failures_are_bucketed_by_kind() {
+        let kind = |e: AppError| failure_kind(&e.to_string());
+        assert_eq!(
+            kind(AppError::Internal("Unparseable score for T: \"x\"".into())),
+            "parse_failure"
+        );
+        assert_eq!(
+            kind(AppError::Internal(
+                "Out-of-range fair_probability 62 for T".into()
+            )),
+            "invalid_probability"
+        );
+        assert_eq!(
+            kind(AppError::Internal(
+                "Anthropic returned 529: overloaded".into()
+            )),
+            "provider_error"
+        );
+        assert_eq!(
+            kind(AppError::Internal(
+                "Anthropic request failed: timeout".into()
+            )),
+            "request_failed"
+        );
+        assert_eq!(kind(AppError::NotFound), "other");
     }
 
     #[test]

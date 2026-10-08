@@ -61,6 +61,7 @@ async fn main() {
     services::jwks::spawn_refresh_task(state.clone());
     services::market_store::spawn_refresh_task(state.clone());
     services::arb::spawn_arb_task(state.clone());
+    services::outcomes::spawn_sync_task(state.clone());
 
     let app = routes::app_router(state)
         .layer(tower_http::trace::TraceLayer::new_for_http())

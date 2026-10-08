@@ -185,6 +185,60 @@ fn group_by_event(markets: Vec<KalshiMarket>) -> Vec<KalshiMarket> {
     best.into_values().collect()
 }
 
+/// Lifecycle and settlement fields of one market, as returned by
+/// `GET /markets?tickers=...` (field meanings: docs.kalshi.com, Get Market).
+#[derive(Debug, Clone, Deserialize)]
+pub struct KalshiSettlement {
+    pub ticker: String,
+    /// initialized | inactive | active | closed | determined | disputed |
+    /// amended | finalized
+    pub status: String,
+    /// binary | scalar
+    #[serde(default)]
+    pub market_type: Option<String>,
+    /// yes | no | scalar | "" (empty until determined)
+    #[serde(default)]
+    pub result: Option<String>,
+    /// YES-side payout in dollars; only filled after determination.
+    #[serde(default)]
+    pub settlement_value_dollars: Option<String>,
+    #[serde(default)]
+    pub settlement_ts: Option<DateTime<Utc>>,
+}
+
+/// Settlement state for up to a batch of tickers in one call. Tickers Kalshi
+/// doesn't return (unknown, or settled before its historical cutoff and only
+/// served by `/historical/markets`) are simply absent from the result.
+pub async fn fetch_settlements(
+    client: &Client,
+    tickers: &[String],
+) -> Result<Vec<KalshiSettlement>, AppError> {
+    #[derive(Deserialize)]
+    struct Page {
+        markets: Vec<KalshiSettlement>,
+    }
+
+    // Kalshi tickers are [A-Z0-9.-], so they need no URL escaping.
+    let url = format!(
+        "{KALSHI_BASE}/markets?tickers={}&limit={}",
+        tickers.join(","),
+        tickers.len()
+    );
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Kalshi request failed: {e}")))?;
+
+    let page: Page = response
+        .error_for_status()
+        .map_err(|e| AppError::Internal(format!("Kalshi returned error status: {e}")))?
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Kalshi response parse error: {e}")))?;
+    Ok(page.markets)
+}
+
 /// Fetch one market directly from Kalshi (used when a ticker isn't in the
 /// filtered snapshot — e.g. a low-liquidity strike opened from a detail view).
 pub async fn fetch_market(client: &Client, ticker: &str) -> Result<Option<Market>, AppError> {

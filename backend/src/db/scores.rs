@@ -19,6 +19,32 @@ pub struct NewScore<'a> {
     pub input_tokens: i64,
     pub output_tokens: i64,
     pub raw_content: Option<&'a Value>,
+    pub context: ForecastContext<'a>,
+}
+
+/// What the model was shown and when (migrations/0010_forecast_ledger.sql).
+pub struct ForecastContext<'a> {
+    pub requested_at: DateTime<Utc>,
+    pub prompt_version: &'a str,
+    pub event_ticker: &'a str,
+    pub category: &'a str,
+    pub market_close_time: Option<DateTime<Utc>>,
+    pub yes_bid: f64,
+    pub yes_ask: f64,
+    pub no_bid: f64,
+    pub no_ask: f64,
+}
+
+/// One failed Claude scoring attempt.
+pub struct NewFailure<'a> {
+    pub market_ticker: &'a str,
+    pub requested_at: DateTime<Utc>,
+    pub model: &'a str,
+    pub prompt_version: &'a str,
+    pub web_search_enabled: bool,
+    pub error_kind: &'a str,
+    pub error_detail: &'a str,
+    pub market_price_at_request: f64,
 }
 
 #[derive(sqlx::FromRow)]
@@ -67,10 +93,12 @@ pub async fn insert(pool: &PgPool, new: &NewScore<'_>) -> Result<(), AppError> {
             market_ticker, market_title, fair_probability, confidence,
             rationale, signals, risks, market_price_at_score, model,
             web_search_enabled, web_search_count, input_tokens, output_tokens,
-            raw_content, scored_at
+            raw_content, scored_at, requested_at, prompt_version, event_ticker,
+            category, market_close_time, yes_bid, yes_ask, no_bid, no_ask
          ) VALUES (
             $1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9,
-            $10, $11, $12, $13, $14::jsonb, $15
+            $10, $11, $12, $13, $14::jsonb, $15, $16, $17, $18,
+            $19, $20, $21, $22, $23, $24
          )",
     )
     .bind(new.market_ticker)
@@ -88,6 +116,35 @@ pub async fn insert(pool: &PgPool, new: &NewScore<'_>) -> Result<(), AppError> {
     .bind(new.output_tokens)
     .bind(raw)
     .bind(new.score.scored_at)
+    .bind(new.context.requested_at)
+    .bind(new.context.prompt_version)
+    .bind(new.context.event_ticker)
+    .bind(new.context.category)
+    .bind(new.context.market_close_time)
+    .bind(new.context.yes_bid)
+    .bind(new.context.yes_ask)
+    .bind(new.context.no_bid)
+    .bind(new.context.no_ask)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn insert_failure(pool: &PgPool, new: &NewFailure<'_>) -> Result<(), AppError> {
+    sqlx::query(
+        "INSERT INTO ai_score_failures (
+            market_ticker, requested_at, model, prompt_version, web_search_enabled,
+            error_kind, error_detail, market_price_at_request
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+    )
+    .bind(new.market_ticker)
+    .bind(new.requested_at)
+    .bind(new.model)
+    .bind(new.prompt_version)
+    .bind(new.web_search_enabled)
+    .bind(new.error_kind)
+    .bind(new.error_detail)
+    .bind(new.market_price_at_request)
     .execute(pool)
     .await?;
     Ok(())
