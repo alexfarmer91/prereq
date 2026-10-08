@@ -83,10 +83,31 @@ pub fn is_stale(score: &Score, market: &Market, now: DateTime<Utc>) -> bool {
         .is_some_and(|p| (market.mid_price - p).abs() >= RESCORE_PRICE_MOVE)
 }
 
-/// Edge is deterministic given the model's fair probability — reprice it
-/// against the live mid rather than serving the value from scoring time.
-pub fn refresh_edge(score: &mut Score, market: &Market) {
-    score.edge = score.fair_probability - market.mid_price;
+/// Every number derived from the model's probability is backend arithmetic
+/// against live quotes — never the model's own math, never the values from
+/// scoring time.
+///
+/// `edge` is the AI–market gap against the mid (a forecasting benchmark, not
+/// a price anyone can trade at). EV uses the executable top-of-book asks and
+/// assumes a binary contract paying $1, before fees, ignoring depth.
+pub fn reprice(score: &mut Score, market: &Market) {
+    let q = score.fair_probability;
+    score.edge = q - market.mid_price;
+    score.ev_yes_per_dollar = ev_per_dollar(q, market.yes_ask);
+    score.ev_no_per_dollar = ev_per_dollar(1.0 - q, market.no_ask);
+}
+
+/// Expected profit per $1 spent buying a $1-payout contract at `ask` that
+/// pays out with probability `p`: `p / ask - 1`. `None` without a usable ask
+/// (Kalshi reports a missing NO ask as 0).
+pub fn ev_per_dollar(p: f64, ask: f64) -> Option<f64> {
+    (valid_probability(p) && ask > 0.0 && ask < 1.0).then(|| p / ask - 1.0)
+}
+
+/// A model probability must be a finite number in [0, 1]. Anything else is
+/// rejected as a failed score — never clamped into a plausible forecast.
+pub fn valid_probability(p: f64) -> bool {
+    (0.0..=1.0).contains(&p)
 }
 
 /// True while a billing/auth or rate-limit failure has paused all scoring.
@@ -111,7 +132,7 @@ async fn warm_cache(state: &AppState, ticker: &str, score: &Score) {
 
 /// Latest persisted score for a ticker — hot cache, then Postgres. Never
 /// calls Claude. `edge` is relative to the price at scoring time; callers
-/// reprice it with [`refresh_edge`].
+/// reprice it with [`reprice`].
 pub async fn stored_score(state: &AppState, ticker: &str) -> Option<Score> {
     if let Some(cached) = state.cache.get(&cache_key(ticker)).await {
         if let Ok(score) = serde_json::from_str::<Score>(&cached) {
@@ -163,9 +184,9 @@ pub async fn attach_stored_scores(state: &AppState, markets: &mut [Market]) {
                 market.score = Some(score.clone());
             }
         }
-        let mid = market.mid_price;
-        if let Some(score) = market.score.as_mut() {
-            score.edge = score.fair_probability - mid;
+        if let Some(mut score) = market.score.take() {
+            reprice(&mut score, market);
+            market.score = Some(score);
         }
     }
 }
@@ -182,7 +203,7 @@ pub async fn get_or_score(
     market: &Market,
 ) -> Result<Option<Score>, AppError> {
     let existing = stored_score(state, &market.ticker).await.map(|mut s| {
-        refresh_edge(&mut s, market);
+        reprice(&mut s, market);
         s
     });
     if let Some(score) = &existing {
@@ -387,9 +408,13 @@ async fn score_market(
         ))
     })?;
 
-    // Edge is deterministic given the model's fair probability — don't trust
-    // the LLM's arithmetic.
-    score.edge = score.fair_probability - market.mid_price;
+    if !valid_probability(score.fair_probability) {
+        return Err(AppError::Internal(format!(
+            "Out-of-range fair_probability {} for {}",
+            score.fair_probability, market.ticker
+        )));
+    }
+    reprice(&mut score, market);
     score.scored_at = Utc::now();
     score.market_price_at_score = Some(market.mid_price);
 
@@ -447,12 +472,12 @@ Current yes price: ${yes_bid:.2} bid / ${yes_ask:.2} ask
 24h volume: ${volume:.2}
 Closes: {close}
 
-{research_instruction} Respond with ONLY valid JSON, no other text:
+{research_instruction} Respond with ONLY valid JSON, no other text.
+"fair_probability" is your probability, from 0 to 1, that this market
+resolves YES.
 {{
   "fair_probability": 0.00,
   "confidence": "low|medium|high",
-  "edge": 0.00,
-  "ev_per_dollar": 0.00,
   "rationale": "2-3 sentence explanation",
   "signals": ["signal 1", "signal 2"],
   "risks": ["risk 1", "risk 2"]
@@ -553,7 +578,8 @@ mod tests {
             fair_probability: 0.6,
             confidence: "medium".into(),
             edge: 0.6 - price,
-            ev_per_dollar: 0.0,
+            ev_yes_per_dollar: None,
+            ev_no_per_dollar: None,
             rationale: String::new(),
             signals: vec![],
             risks: vec![],
@@ -584,8 +610,56 @@ mod tests {
     #[test]
     fn edge_is_repriced_to_live_mid() {
         let mut score = score_at(0.50, chrono::Duration::hours(2));
-        refresh_edge(&mut score, &market_at(0.40));
+        reprice(&mut score, &market_at(0.40));
         assert!((score.edge - 0.20).abs() < 1e-9);
+    }
+
+    #[test]
+    fn ev_uses_each_sides_ask_not_the_mid() {
+        // q = 0.6; YES ask 0.45, NO ask 0.58 (mid 0.43 is never used for EV).
+        let mut market = market_at(0.43);
+        market.yes_ask = 0.45;
+        market.no_ask = 0.58;
+        let mut score = score_at(0.43, chrono::Duration::hours(2));
+        reprice(&mut score, &market);
+        // YES: 0.6 / 0.45 - 1 = +33.3%; NO: 0.4 / 0.58 - 1 = -31.0%.
+        assert!((score.ev_yes_per_dollar.unwrap() - (0.6 / 0.45 - 1.0)).abs() < 1e-9);
+        assert!((score.ev_no_per_dollar.unwrap() - (0.4 / 0.58 - 1.0)).abs() < 1e-9);
+        assert!(score.ev_yes_per_dollar.unwrap() > 0.0);
+        assert!(score.ev_no_per_dollar.unwrap() < 0.0);
+    }
+
+    #[test]
+    fn ev_is_unavailable_without_a_usable_ask() {
+        assert_eq!(ev_per_dollar(0.6, 0.0), None); // Kalshi's missing-ask value
+        assert_eq!(ev_per_dollar(0.6, 1.0), None);
+        assert_eq!(ev_per_dollar(0.6, -0.1), None);
+        assert_eq!(ev_per_dollar(0.6, f64::NAN), None);
+        assert_eq!(ev_per_dollar(1.5, 0.5), None);
+        assert!((ev_per_dollar(0.5, 0.5).unwrap()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn probability_must_be_finite_and_in_range() {
+        assert!(valid_probability(0.0));
+        assert!(valid_probability(0.5));
+        assert!(valid_probability(1.0));
+        assert!(!valid_probability(-0.01));
+        assert!(!valid_probability(1.01));
+        assert!(!valid_probability(62.0)); // percent instead of a fraction
+        assert!(!valid_probability(f64::NAN));
+        assert!(!valid_probability(f64::INFINITY));
+    }
+
+    #[test]
+    fn model_supplied_arithmetic_is_ignored() {
+        // An old-format response still parses, but its edge/EV never survive
+        // a reprice.
+        let text = r#"{"fair_probability":0.62,"confidence":"high","edge":0.4,"ev_per_dollar":9.9,"rationale":"x"}"#;
+        let mut score = parse_score(text).expect("should parse");
+        reprice(&mut score, &market_at(0.50));
+        assert!((score.edge - 0.12).abs() < 1e-9);
+        assert!((score.ev_yes_per_dollar.unwrap() - (0.62 / 0.5 - 1.0)).abs() < 1e-9);
     }
 
     #[test]
@@ -631,6 +705,7 @@ mod tests {
         attach_stored_scores(&state, &mut markets).await;
         let attached = markets[0].score.as_ref().expect("score attached");
         assert!((attached.edge - 0.15).abs() < 1e-9);
+        assert!(attached.ev_yes_per_dollar.is_some());
     }
 
     #[test]

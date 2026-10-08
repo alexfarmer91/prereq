@@ -26,7 +26,6 @@ struct ScoreRow {
     market_ticker: String,
     fair_probability: f64,
     confidence: String,
-    ev_per_dollar: f64,
     rationale: String,
     signals: String,
     risks: String,
@@ -35,14 +34,15 @@ struct ScoreRow {
 }
 
 impl ScoreRow {
-    /// `edge` is left relative to the price at scoring time; callers
-    /// recompute it against the live mid (`scorer::refresh_edge`).
+    /// `edge` is left relative to the price at scoring time and EV is unset;
+    /// callers recompute both against live quotes (`scorer::reprice`).
     fn into_score(self) -> (String, Score) {
         let score = Score {
             fair_probability: self.fair_probability,
             confidence: self.confidence,
             edge: self.fair_probability - self.market_price_at_score,
-            ev_per_dollar: self.ev_per_dollar,
+            ev_yes_per_dollar: None,
+            ev_no_per_dollar: None,
             rationale: self.rationale,
             signals: serde_json::from_str(&self.signals).unwrap_or_default(),
             risks: serde_json::from_str(&self.risks).unwrap_or_default(),
@@ -54,7 +54,7 @@ impl ScoreRow {
 }
 
 // JSONB columns round-trip as text so no extra sqlx feature is needed.
-const COLUMNS: &str = "market_ticker, fair_probability, confidence, ev_per_dollar, \
+const COLUMNS: &str = "market_ticker, fair_probability, confidence, \
     rationale, signals::text AS signals, risks::text AS risks, \
     market_price_at_score, scored_at";
 
@@ -64,20 +64,19 @@ pub async fn insert(pool: &PgPool, new: &NewScore<'_>) -> Result<(), AppError> {
     let raw = new.raw_content.map(Value::to_string);
     sqlx::query(
         "INSERT INTO ai_scores (
-            market_ticker, market_title, fair_probability, confidence, ev_per_dollar,
+            market_ticker, market_title, fair_probability, confidence,
             rationale, signals, risks, market_price_at_score, model,
             web_search_enabled, web_search_count, input_tokens, output_tokens,
             raw_content, scored_at
          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10,
-            $11, $12, $13, $14, $15::jsonb, $16
+            $1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9,
+            $10, $11, $12, $13, $14::jsonb, $15
          )",
     )
     .bind(new.market_ticker)
     .bind(new.market_title)
     .bind(new.score.fair_probability)
     .bind(&new.score.confidence)
-    .bind(new.score.ev_per_dollar)
     .bind(&new.score.rationale)
     .bind(signals)
     .bind(risks)

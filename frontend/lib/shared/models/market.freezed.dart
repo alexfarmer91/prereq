@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Score {
 
- double get fairProbability; ScoreConfidence get confidence; double get edge; double get evPerDollar; String get rationale; List<String> get signals; List<String> get risks; DateTime get scoredAt;
+ double get fairProbability; ScoreConfidence get confidence; double get edge; double? get evYesPerDollar; double? get evNoPerDollar; String get rationale; List<String> get signals; List<String> get risks; DateTime get scoredAt;
 /// Create a copy of Score
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ScoreCopyWith<Score> get copyWith => _$ScoreCopyWithImpl<Score>(this as Score, 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evPerDollar, evPerDollar) || other.evPerDollar == evPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other.signals, signals)&&const DeepCollectionEquality().equals(other.risks, risks)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evYesPerDollar, evYesPerDollar) || other.evYesPerDollar == evYesPerDollar)&&(identical(other.evNoPerDollar, evNoPerDollar) || other.evNoPerDollar == evNoPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other.signals, signals)&&const DeepCollectionEquality().equals(other.risks, risks)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evPerDollar,rationale,const DeepCollectionEquality().hash(signals),const DeepCollectionEquality().hash(risks),scoredAt);
+int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evYesPerDollar,evNoPerDollar,rationale,const DeepCollectionEquality().hash(signals),const DeepCollectionEquality().hash(risks),scoredAt);
 
 @override
 String toString() {
-  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evPerDollar: $evPerDollar, rationale: $rationale, signals: $signals, risks: $risks, scoredAt: $scoredAt)';
+  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evYesPerDollar: $evYesPerDollar, evNoPerDollar: $evNoPerDollar, rationale: $rationale, signals: $signals, risks: $risks, scoredAt: $scoredAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ScoreCopyWith<$Res>  {
   factory $ScoreCopyWith(Score value, $Res Function(Score) _then) = _$ScoreCopyWithImpl;
 @useResult
 $Res call({
- double fairProbability, ScoreConfidence confidence, double edge, double evPerDollar, String rationale, List<String> signals, List<String> risks, DateTime scoredAt
+ double fairProbability, ScoreConfidence confidence, double edge, double? evYesPerDollar, double? evNoPerDollar, String rationale, List<String> signals, List<String> risks, DateTime scoredAt
 });
 
 
@@ -65,13 +65,14 @@ class _$ScoreCopyWithImpl<$Res>
 
 /// Create a copy of Score
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evPerDollar = null,Object? rationale = null,Object? signals = null,Object? risks = null,Object? scoredAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evYesPerDollar = freezed,Object? evNoPerDollar = freezed,Object? rationale = null,Object? signals = null,Object? risks = null,Object? scoredAt = null,}) {
   return _then(_self.copyWith(
 fairProbability: null == fairProbability ? _self.fairProbability : fairProbability // ignore: cast_nullable_to_non_nullable
 as double,confidence: null == confidence ? _self.confidence : confidence // ignore: cast_nullable_to_non_nullable
 as ScoreConfidence,edge: null == edge ? _self.edge : edge // ignore: cast_nullable_to_non_nullable
-as double,evPerDollar: null == evPerDollar ? _self.evPerDollar : evPerDollar // ignore: cast_nullable_to_non_nullable
-as double,rationale: null == rationale ? _self.rationale : rationale // ignore: cast_nullable_to_non_nullable
+as double,evYesPerDollar: freezed == evYesPerDollar ? _self.evYesPerDollar : evYesPerDollar // ignore: cast_nullable_to_non_nullable
+as double?,evNoPerDollar: freezed == evNoPerDollar ? _self.evNoPerDollar : evNoPerDollar // ignore: cast_nullable_to_non_nullable
+as double?,rationale: null == rationale ? _self.rationale : rationale // ignore: cast_nullable_to_non_nullable
 as String,signals: null == signals ? _self.signals : signals // ignore: cast_nullable_to_non_nullable
 as List<String>,risks: null == risks ? _self.risks : risks // ignore: cast_nullable_to_non_nullable
 as List<String>,scoredAt: null == scoredAt ? _self.scoredAt : scoredAt // ignore: cast_nullable_to_non_nullable
@@ -160,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double evPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Score() when $default != null:
-return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
+return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
   return orElse();
 
 }
@@ -181,10 +182,10 @@ return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evPerDol
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double evPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)  $default,) {final _that = this;
 switch (_that) {
 case _Score():
-return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
+return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +202,10 @@ return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evPerDol
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double evPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Score() when $default != null:
-return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
+return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
   return null;
 
 }
@@ -216,13 +217,14 @@ return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evPerDol
 @JsonSerializable()
 
 class _Score implements Score {
-  const _Score({required this.fairProbability, required this.confidence, required this.edge, required this.evPerDollar, required this.rationale, required final  List<String> signals, required final  List<String> risks, required this.scoredAt}): _signals = signals,_risks = risks;
+  const _Score({required this.fairProbability, required this.confidence, required this.edge, this.evYesPerDollar, this.evNoPerDollar, required this.rationale, required final  List<String> signals, required final  List<String> risks, required this.scoredAt}): _signals = signals,_risks = risks;
   factory _Score.fromJson(Map<String, dynamic> json) => _$ScoreFromJson(json);
 
 @override final  double fairProbability;
 @override final  ScoreConfidence confidence;
 @override final  double edge;
-@override final  double evPerDollar;
+@override final  double? evYesPerDollar;
+@override final  double? evNoPerDollar;
 @override final  String rationale;
  final  List<String> _signals;
 @override List<String> get signals {
@@ -253,16 +255,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evPerDollar, evPerDollar) || other.evPerDollar == evPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other._signals, _signals)&&const DeepCollectionEquality().equals(other._risks, _risks)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evYesPerDollar, evYesPerDollar) || other.evYesPerDollar == evYesPerDollar)&&(identical(other.evNoPerDollar, evNoPerDollar) || other.evNoPerDollar == evNoPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other._signals, _signals)&&const DeepCollectionEquality().equals(other._risks, _risks)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evPerDollar,rationale,const DeepCollectionEquality().hash(_signals),const DeepCollectionEquality().hash(_risks),scoredAt);
+int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evYesPerDollar,evNoPerDollar,rationale,const DeepCollectionEquality().hash(_signals),const DeepCollectionEquality().hash(_risks),scoredAt);
 
 @override
 String toString() {
-  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evPerDollar: $evPerDollar, rationale: $rationale, signals: $signals, risks: $risks, scoredAt: $scoredAt)';
+  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evYesPerDollar: $evYesPerDollar, evNoPerDollar: $evNoPerDollar, rationale: $rationale, signals: $signals, risks: $risks, scoredAt: $scoredAt)';
 }
 
 
@@ -273,7 +275,7 @@ abstract mixin class _$ScoreCopyWith<$Res> implements $ScoreCopyWith<$Res> {
   factory _$ScoreCopyWith(_Score value, $Res Function(_Score) _then) = __$ScoreCopyWithImpl;
 @override @useResult
 $Res call({
- double fairProbability, ScoreConfidence confidence, double edge, double evPerDollar, String rationale, List<String> signals, List<String> risks, DateTime scoredAt
+ double fairProbability, ScoreConfidence confidence, double edge, double? evYesPerDollar, double? evNoPerDollar, String rationale, List<String> signals, List<String> risks, DateTime scoredAt
 });
 
 
@@ -290,13 +292,14 @@ class __$ScoreCopyWithImpl<$Res>
 
 /// Create a copy of Score
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evPerDollar = null,Object? rationale = null,Object? signals = null,Object? risks = null,Object? scoredAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evYesPerDollar = freezed,Object? evNoPerDollar = freezed,Object? rationale = null,Object? signals = null,Object? risks = null,Object? scoredAt = null,}) {
   return _then(_Score(
 fairProbability: null == fairProbability ? _self.fairProbability : fairProbability // ignore: cast_nullable_to_non_nullable
 as double,confidence: null == confidence ? _self.confidence : confidence // ignore: cast_nullable_to_non_nullable
 as ScoreConfidence,edge: null == edge ? _self.edge : edge // ignore: cast_nullable_to_non_nullable
-as double,evPerDollar: null == evPerDollar ? _self.evPerDollar : evPerDollar // ignore: cast_nullable_to_non_nullable
-as double,rationale: null == rationale ? _self.rationale : rationale // ignore: cast_nullable_to_non_nullable
+as double,evYesPerDollar: freezed == evYesPerDollar ? _self.evYesPerDollar : evYesPerDollar // ignore: cast_nullable_to_non_nullable
+as double?,evNoPerDollar: freezed == evNoPerDollar ? _self.evNoPerDollar : evNoPerDollar // ignore: cast_nullable_to_non_nullable
+as double?,rationale: null == rationale ? _self.rationale : rationale // ignore: cast_nullable_to_non_nullable
 as String,signals: null == signals ? _self._signals : signals // ignore: cast_nullable_to_non_nullable
 as List<String>,risks: null == risks ? _self._risks : risks // ignore: cast_nullable_to_non_nullable
 as List<String>,scoredAt: null == scoredAt ? _self.scoredAt : scoredAt // ignore: cast_nullable_to_non_nullable

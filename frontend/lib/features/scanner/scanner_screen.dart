@@ -58,7 +58,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
             onSelected: (value) => setState(() => _sort = value),
             itemBuilder: (context) => const [
               PopupMenuItem(
-                  value: MarketSort.edge, child: Text('Sort by edge')),
+                  value: MarketSort.edge, child: Text('Sort by AI–market gap')),
               PopupMenuItem(
                   value: MarketSort.confidence,
                   child: Text('Sort by confidence')),

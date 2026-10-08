@@ -4,8 +4,9 @@ import '../../../shared/models/market.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/utils/formatters.dart';
 
-/// AI score card: fair probability, edge, EV, confidence, rationale,
-/// signals, and risks. Handles `score == null` with a "Not yet scored" state.
+/// AI estimate card: the unvalidated AI probability, its gap from the market,
+/// backend-computed EV under stated assumptions, the model's self-rated
+/// confidence, rationale, signals, and risks. Handles `score == null` with a "Not yet scored" state.
 class ScoreCard extends StatelessWidget {
   const ScoreCard({super.key, required this.score});
 
@@ -45,11 +46,11 @@ class ScoreCard extends StatelessWidget {
       );
     }
 
-    final confidenceColor = switch (score.confidence) {
-      ScoreConfidence.high => AppColors.green,
-      ScoreConfidence.medium => AppColors.amber,
-      ScoreConfidence.low => AppColors.textSecondary,
-    };
+    // Neutral on purpose: a self-rating is not measured reliability, so it
+    // must not borrow the green "good" colour.
+    const confidenceColor = AppColors.textSecondary;
+    final muted = theme.textTheme.bodySmall
+        ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     return Card(
       child: Padding(
@@ -62,7 +63,7 @@ class ScoreCard extends StatelessWidget {
                 const Icon(Icons.auto_awesome,
                     color: AppColors.accent, size: 20),
                 const SizedBox(width: 8),
-                Text('AI score', style: theme.textTheme.titleMedium),
+                Text('AI estimate', style: theme.textTheme.titleMedium),
                 const Spacer(),
                 Container(
                   padding:
@@ -72,8 +73,8 @@ class ScoreCard extends StatelessWidget {
                     border: Border.all(color: confidenceColor),
                   ),
                   child: Text(
-                    '${score.confidence.name.toUpperCase()} CONFIDENCE',
-                    style: TextStyle(
+                    'SELF-RATED ${score.confidence.name.toUpperCase()}',
+                    style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: confidenceColor),
@@ -81,20 +82,36 @@ class ScoreCard extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Unvalidated — not yet measured against resolved outcomes. '
+              'A gap from the market is not a demonstrated edge.',
+              style: muted,
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 28,
               runSpacing: 12,
               children: [
                 _ScoreStat(
-                    'Fair probability',
+                    'AI probability (YES)',
                     formatPercent(score.fairProbability, decimals: 1),
                     AppColors.textPrimary),
-                _ScoreStat('Edge', formatEdge(score.edge),
+                _ScoreStat('AI–market gap', formatEdge(score.edge),
                     AppColors.edgeColor(score.edge)),
-                _ScoreStat('EV / \$1', formatEdge(score.evPerDollar),
-                    AppColors.edgeColor(score.evPerDollar)),
+                _ScoreStat('EV / \$1 if AI right · YES',
+                    _formatEv(score.evYesPerDollar),
+                    AppColors.edgeColor(score.evYesPerDollar)),
+                _ScoreStat('EV / \$1 if AI right · NO',
+                    _formatEv(score.evNoPerDollar),
+                    AppColors.edgeColor(score.evNoPerDollar)),
               ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'EV assumes the AI estimate is correct, buying at the current '
+              'ask, before fees and slippage. Not a recommendation.',
+              style: muted,
             ),
             const SizedBox(height: 16),
             Text(score.rationale, style: theme.textTheme.bodyMedium),
@@ -128,6 +145,9 @@ class ScoreCard extends StatelessWidget {
     );
   }
 }
+
+/// `—` when the backend had no usable ask; never shown as zero.
+String _formatEv(double? ev) => ev == null ? '—' : formatEdge(ev);
 
 class _ScoreStat extends StatelessWidget {
   const _ScoreStat(this.label, this.value, this.color);
