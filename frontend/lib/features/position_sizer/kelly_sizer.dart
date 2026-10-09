@@ -19,9 +19,12 @@ enum _KellyVariant {
   final double multiplier;
 }
 
-/// Kelly position sizer. Embedded in the market detail screen (with [market]
-/// prefilled) and used standalone on `/sizer` (manual ticker/title entry for
-/// bet logging).
+/// Kelly position sizer — a manual scenario calculator. Embedded in the
+/// market detail screen (with [market]'s asks prefilled) and used standalone
+/// on `/sizer` (manual ticker/title entry for bet logging).
+///
+/// The probability is always the user's own input. It deliberately never
+/// reads the AI score: AI estimates are unvalidated and must not drive sizing.
 class KellySizer extends ConsumerStatefulWidget {
   const KellySizer({super.key, this.market});
 
@@ -38,7 +41,8 @@ class _KellySizerState extends ConsumerState<KellySizer> {
   final _titleController = TextEditingController();
 
   BetSide _side = BetSide.yes;
-  double _probability = 0.5;
+  /// The user's own probability for [_side]; null until they set it.
+  double? _probability;
   _KellyVariant _variant = _KellyVariant.half;
   bool _bankrollPrefilled = false;
   bool _logging = false;
@@ -50,7 +54,6 @@ class _KellySizerState extends ConsumerState<KellySizer> {
     super.initState();
     final market = widget.market;
     if (market != null) {
-      _probability = market.score?.fairProbability ?? 0.5;
       _priceController.text = market.yesAsk.toStringAsFixed(2);
     } else {
       _priceController.text = '0.50';
@@ -69,6 +72,8 @@ class _KellySizerState extends ConsumerState<KellySizer> {
   void _onSideChanged(BetSide side) {
     setState(() {
       _side = side;
+      // A YES estimate is not a NO estimate — make the user re-enter it.
+      _probability = null;
       final market = widget.market;
       if (market != null) {
         _priceController.text = (side == BetSide.yes
@@ -116,7 +121,7 @@ class _KellySizerState extends ConsumerState<KellySizer> {
             side: _side,
             entryPriceDollars: _price,
             contracts: contracts,
-            yourProbability: _probability,
+            yourProbability: _probability!,
             kellyFraction: fraction,
           );
       if (mounted) {
@@ -149,14 +154,17 @@ class _KellySizerState extends ConsumerState<KellySizer> {
       }
     });
 
+    final probability = _probability;
+    // Unset probability sizes to zero rather than to a default guess.
     final sizing = KellySizing(
-      probability: _probability,
+      probability: probability ?? 0,
       price: _price,
       bankroll: _bankroll,
     );
     final selectedFraction = sizing.fullFraction * _variant.multiplier;
     final selectedContracts = sizing.contractsFor(selectedFraction);
     final canLog = !_logging &&
+        probability != null &&
         _price > 0 &&
         _price < 1 &&
         _bankroll > 0 &&
@@ -178,6 +186,13 @@ class _KellySizerState extends ConsumerState<KellySizer> {
                 Text('Kelly position sizer',
                     style: theme.textTheme.titleMedium),
               ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Scenario calculator: sizes from your own probability, not '
+              'the AI estimate. Not a recommendation; excludes fees.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
             if (!_embedded) ...[
@@ -256,16 +271,16 @@ class _KellySizerState extends ConsumerState<KellySizer> {
                     children: [
                       Text(
                         'Your probability ${_side.name.toUpperCase()} wins: '
-                        '${formatPercent(_probability)}',
+                        '${probability == null ? 'not set' : formatPercent(probability)}',
                         style: theme.textTheme.bodySmall,
                       ),
                       Slider(
-                        value: _probability,
+                        value: probability ?? 0.5,
                         onChanged: (v) => setState(() => _probability = v),
                         min: 0,
                         max: 1,
                         divisions: 100,
-                        label: formatPercent(_probability),
+                        label: formatPercent(probability ?? 0.5),
                       ),
                     ],
                   ),

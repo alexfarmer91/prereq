@@ -29,19 +29,57 @@ pub struct KalshiMarket {
 }
 
 /// AI score produced by the Claude scoring engine.
+///
+/// Claude supplies only `fair_probability` (an unvalidated estimate that the
+/// market resolves YES), the self-rated `confidence`, and the research text.
+/// Every derived number is backend arithmetic — see `scorer::reprice`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Score {
     pub fair_probability: f64,
     pub confidence: String,
+    /// AI–market probability gap: `fair_probability - mid_price`. A gap is
+    /// not demonstrated edge.
+    #[serde(default)]
     pub edge: f64,
-    pub ev_per_dollar: f64,
+    /// Expected profit per $1 spent buying YES at the top-of-book ask, *if*
+    /// `fair_probability` were correct. Binary $1 payout, before fees, no
+    /// depth or slippage. `None` when there is no usable ask.
+    #[serde(default)]
+    pub ev_yes_per_dollar: Option<f64>,
+    /// Same as `ev_yes_per_dollar` for buying NO at the NO ask.
+    #[serde(default)]
+    pub ev_no_per_dollar: Option<f64>,
     pub rationale: String,
     #[serde(default)]
     pub signals: Vec<String>,
     #[serde(default)]
     pub risks: Vec<String>,
+    /// Structured research behind the estimate (prompt v3+). Empty for older
+    /// scores. Claims are the model's — sources are not independently checked.
+    #[serde(default)]
+    pub evidence: Vec<Evidence>,
     #[serde(default = "Utc::now")]
     pub scored_at: DateTime<Utc>,
+    /// Market mid when Claude scored it. `edge` is recomputed against the
+    /// live mid on every read; this anchors the move-since-scored rescore
+    /// check. Absent on scores cached before it existed.
+    #[serde(default)]
+    pub market_price_at_score: Option<f64>,
+}
+
+/// One piece of evidence the model cited for its estimate.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Evidence {
+    pub claim: String,
+    /// URL, or a non-web source such as "resolution rules".
+    #[serde(default)]
+    pub source: Option<String>,
+    /// Publication/observation date as given by the model (YYYY-MM-DD).
+    #[serde(default)]
+    pub date: Option<String>,
+    /// Which outcome the claim points toward: yes | no | neutral.
+    #[serde(default)]
+    pub supports: Option<String>,
 }
 
 /// Clean market struct returned by our API.

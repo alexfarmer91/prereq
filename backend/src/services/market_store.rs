@@ -56,8 +56,8 @@ impl MarketStore {
     }
 
     /// Attach a score to a market already in the snapshot. A no-op if the
-    /// snapshot was replaced and the ticker fell out — the score is cached,
-    /// so the next fetch re-attaches it.
+    /// snapshot was replaced and the ticker fell out — the score is
+    /// persisted, so the next fetch re-attaches it.
     pub async fn set_score(&self, ticker: &str, score: Score) {
         let mut guard = self.inner.write().await;
         if let Some(market) = guard.iter_mut().find(|m| m.ticker == ticker) {
@@ -66,28 +66,30 @@ impl MarketStore {
     }
 }
 
-/// Fetch + filter from Kalshi, attach any cached scores, and swap in the new
-/// snapshot. Fast (seconds) — no Claude calls happen here, so this is safe to
-/// run inside a request handler.
+/// Fetch + filter from Kalshi, attach persisted scores (repriced to the live
+/// mid), and swap in the new snapshot. Fast (seconds) — no Claude calls
+/// happen here, so this is safe to run inside a request handler.
 async fn fetch_snapshot(state: &AppState) -> Result<usize, AppError> {
     let mut markets = kalshi::fetch_filtered_markets(&state.http, None).await?;
-    for market in markets.iter_mut() {
-        if let Some(cached) = state.cache.get(&format!("score:{}", market.ticker)).await {
-            market.score = serde_json::from_str(&cached).ok();
-        }
-    }
+    scorer::attach_stored_scores(state, &mut markets).await;
     let count = markets.len();
     state.markets.replace(markets).await;
     Ok(count)
 }
 
-/// Score the head of the current snapshot through Claude, publishing each
-/// score into the store as it lands. Slow (minutes) — background task only.
+/// Score the head of the current snapshot, publishing each score into the
+/// store as it lands. Fresh persisted scores are reused, so Claude is only
+/// called for markets that are new or stale — most refreshes make no calls.
+/// Background task only.
 async fn score_snapshot(state: &AppState) {
     let Some(api_key) = state.anthropic_api_key.as_deref() else {
         tracing::debug!("ANTHROPIC_API_KEY not set — serving unscored markets");
         return;
     };
+    if scorer::is_paused(state).await {
+        tracing::info!("AI scoring paused — serving stored scores only");
+        return;
+    }
     // The snapshot is sorted by 24h volume descending; score the head.
     let head: Vec<Market> = state
         .markets
@@ -98,9 +100,13 @@ async fn score_snapshot(state: &AppState) {
         .collect();
     for market in head {
         match scorer::get_or_score(state, api_key, &market).await {
-            Ok(score) => state.markets.set_score(&market.ticker, score).await,
+            Ok(Some(score)) => state.markets.set_score(&market.ticker, score).await,
+            Ok(None) => {}
             Err(e) => {
                 tracing::warn!("Scoring {} failed: {e}", market.ticker);
+                if scorer::is_paused(state).await {
+                    break;
+                }
             }
         }
     }

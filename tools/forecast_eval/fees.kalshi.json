@@ -1,0 +1,7 @@
+{
+  "verified": false,
+  "source": "Kalshi general taker fee as commonly published (0.07 x C x P x (1-P), rounded up to the cent). NOT yet checked against https://kalshi.com/docs/kalshi-fee-schedule.pdf. Per-series fee_multiplier comes from GET /series/{ticker}.",
+  "taker_coefficient": 0.07,
+  "series_multipliers": {},
+  "unsupported_series": []
+}

@@ -59,7 +59,7 @@ class WatchlistScreen extends ConsumerWidget {
                 icon: Icons.bookmarks_outlined,
                 title: 'Nothing on your watchlist',
                 subtitle:
-                    'Add markets from the scanner to track their edge and '
+                    'Add markets from the scanner to track their AI–market gap and '
                     'get live prices here.',
                 actionLabel: 'Browse markets',
                 onAction: () => context.go('/scanner'),
@@ -165,8 +165,8 @@ class _AlertButton extends ConsumerWidget {
     final hasThreshold = item.alertEdgeThreshold != null;
     return Tooltip(
       message: hasThreshold
-          ? 'Alert when edge > ${formatPercent(item.alertEdgeThreshold!, decimals: 1)}'
-          : 'Set edge alert',
+          ? 'Alert when AI gap > ${formatPercent(item.alertEdgeThreshold!, decimals: 1)}'
+          : 'Set AI gap alert',
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () => _editThreshold(context, ref),
@@ -205,11 +205,11 @@ class _AlertButton extends ConsumerWidget {
     final result = await showDialog<(bool, double?)>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edge alert threshold'),
+        title: const Text('AI gap alert threshold'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Alert when the AI edge on ${item.marketTicker} exceeds '
+            Text('Alert when the AI–market gap on ${item.marketTicker} exceeds '
                 'this percentage.'),
             const SizedBox(height: 12),
             TextField(
@@ -256,7 +256,7 @@ class _AlertButton extends ConsumerWidget {
       messenger.showSnackBar(SnackBar(
           content: Text(result.$2 == null
               ? 'Alert cleared'
-              : 'Alert set at ${formatPercent(result.$2!, decimals: 1)} edge')));
+              : 'Alert set at ${formatPercent(result.$2!, decimals: 1)} AI gap')));
     } catch (e) {
       messenger.showSnackBar(
           SnackBar(content: Text('Failed to update alert: $e')));

@@ -28,7 +28,7 @@ Score sampleScore() => Score(
       fairProbability: 0.62,
       confidence: ScoreConfidence.medium,
       edge: 0.05,
-      evPerDollar: 0.08,
+      evYesPerDollar: 0.08,
       rationale: 'Rationale',
       signals: const ['s1'],
       risks: const ['r1'],

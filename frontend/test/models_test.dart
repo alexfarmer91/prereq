@@ -30,10 +30,15 @@ const marketJson = '''
     "fair_probability": 0.62,
     "confidence": "high",
     "edge": 0.05,
-    "ev_per_dollar": 0.08,
+    "ev_yes_per_dollar": 0.08,
+    "ev_no_per_dollar": null,
     "rationale": "Forecast models agree.",
     "signals": ["NWS forecast 86F", "Warm front"],
     "risks": ["Cloud cover", "Station variance"],
+    "evidence": [
+      {"claim": "NWS forecasts 86F", "source": "https://weather.gov", "date": "2026-05-17", "supports": "yes"},
+      {"claim": "Rules use Central Park station", "source": null, "date": null, "supports": null}
+    ],
     "scored_at": "2026-07-14T12:00:00Z"
   }
 }
@@ -60,6 +65,30 @@ void main() {
       expect(market.score!.confidence, ScoreConfidence.high);
       expect(market.score!.fairProbability, 0.62);
       expect(market.score!.signals, hasLength(2));
+      expect(market.score!.evYesPerDollar, 0.08);
+      // Unavailable EV stays null — never silently becomes zero.
+      expect(market.score!.evNoPerDollar, isNull);
+    });
+
+    test('evidence parses, and is empty for scores that predate it', () {
+      final score = Market.fromJson(decode(marketJson)).score!;
+      expect(score.evidence, hasLength(2));
+      expect(score.evidence.first.supports, 'yes');
+      expect(score.evidence.last.source, isNull);
+
+      final json = decode(marketJson);
+      (json['score'] as Map<String, dynamic>).remove('evidence');
+      expect(Market.fromJson(json).score!.evidence, isEmpty);
+    });
+
+    test('score without EV fields (no usable ask) parses as null', () {
+      final json = decode(marketJson);
+      (json['score'] as Map<String, dynamic>)
+        ..remove('ev_yes_per_dollar')
+        ..remove('ev_no_per_dollar');
+      final score = Market.fromJson(json).score!;
+      expect(score.evYesPerDollar, isNull);
+      expect(score.evNoPerDollar, isNull);
     });
 
     test('handles null score and absent rules_primary', () {
@@ -77,7 +106,9 @@ void main() {
       expect(json['event_ticker'], 'KXHIGHNY-26MAY18');
       expect(json['volume_24h'], 14074.65);
       expect(json['mid_price'], 0.87);
-      expect((json['score'] as Map<String, dynamic>)['ev_per_dollar'], 0.08);
+      final score = json['score'] as Map<String, dynamic>;
+      expect(score['ev_yes_per_dollar'], 0.08);
+      expect(score['ev_no_per_dollar'], isNull);
       expect(Market.fromJson(json), market);
     });
   });

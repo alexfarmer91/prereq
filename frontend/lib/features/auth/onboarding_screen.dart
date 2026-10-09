@@ -180,7 +180,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   AppSpace.gap4,
                   Text(
-                    "Don't go in alone",
+                    "Don't go in alone.",
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),

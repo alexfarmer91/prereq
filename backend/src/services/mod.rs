@@ -3,6 +3,7 @@ pub mod cache;
 pub mod jwks;
 pub mod kalshi;
 pub mod market_store;
+pub mod outcomes;
 pub mod polymarket;
 pub mod scorer;
 pub mod storage;

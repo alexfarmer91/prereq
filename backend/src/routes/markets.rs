@@ -10,7 +10,7 @@ use crate::{
         market::{HistoryPoint, Market},
         ApiResponse,
     },
-    services::{kalshi, market_store},
+    services::{kalshi, market_store, scorer},
     AppState,
 };
 
@@ -104,11 +104,9 @@ pub async fn get_market(
             let mut fetched = kalshi::fetch_market(&state.http, &ticker)
                 .await?
                 .ok_or(AppError::NotFound)?;
-            // A direct fetch bypasses the scored snapshot — reuse a cached
+            // A direct fetch bypasses the scored snapshot — reuse a stored
             // score if one exists.
-            if let Some(cached) = state.cache.get(&format!("score:{ticker}")).await {
-                fetched.score = serde_json::from_str(&cached).ok();
-            }
+            scorer::attach_stored_scores(&state, std::slice::from_mut(&mut fetched)).await;
             fetched
         }
     };
@@ -174,11 +172,14 @@ mod tests {
                 fair_probability: 0.6,
                 confidence: c.into(),
                 edge: 0.05,
-                ev_per_dollar: 0.05,
+                ev_yes_per_dollar: None,
+                ev_no_per_dollar: None,
                 rationale: String::new(),
                 signals: vec![],
                 risks: vec![],
+                evidence: vec![],
                 scored_at: Utc::now(),
+                market_price_at_score: None,
             }),
         }
     }

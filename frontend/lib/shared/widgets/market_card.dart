@@ -82,7 +82,7 @@ class MarketCard extends StatelessWidget {
                         isLive ? AppColors.accent : AppColors.textPrimary,
                   ),
                   _Metric(
-                    label: 'EDGE',
+                    label: 'AI GAP',
                     value: edge == null ? '—' : formatEdge(edge),
                     valueColor: edgeColor,
                     secondary: edgeDelta == null
