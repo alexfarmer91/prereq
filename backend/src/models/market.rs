@@ -54,6 +54,10 @@ pub struct Score {
     pub signals: Vec<String>,
     #[serde(default)]
     pub risks: Vec<String>,
+    /// Structured research behind the estimate (prompt v3+). Empty for older
+    /// scores. Claims are the model's — sources are not independently checked.
+    #[serde(default)]
+    pub evidence: Vec<Evidence>,
     #[serde(default = "Utc::now")]
     pub scored_at: DateTime<Utc>,
     /// Market mid when Claude scored it. `edge` is recomputed against the
@@ -61,6 +65,21 @@ pub struct Score {
     /// check. Absent on scores cached before it existed.
     #[serde(default)]
     pub market_price_at_score: Option<f64>,
+}
+
+/// One piece of evidence the model cited for its estimate.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Evidence {
+    pub claim: String,
+    /// URL, or a non-web source such as "resolution rules".
+    #[serde(default)]
+    pub source: Option<String>,
+    /// Publication/observation date as given by the model (YYYY-MM-DD).
+    #[serde(default)]
+    pub date: Option<String>,
+    /// Which outcome the claim points toward: yes | no | neutral.
+    #[serde(default)]
+    pub supports: Option<String>,
 }
 
 /// Clean market struct returned by our API.

@@ -15,6 +15,11 @@ _Score _$ScoreFromJson(Map<String, dynamic> json) => _Score(
   rationale: json['rationale'] as String,
   signals: (json['signals'] as List<dynamic>).map((e) => e as String).toList(),
   risks: (json['risks'] as List<dynamic>).map((e) => e as String).toList(),
+  evidence:
+      (json['evidence'] as List<dynamic>?)
+          ?.map((e) => Evidence.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const <Evidence>[],
   scoredAt: DateTime.parse(json['scored_at'] as String),
 );
 
@@ -27,6 +32,7 @@ Map<String, dynamic> _$ScoreToJson(_Score instance) => <String, dynamic>{
   'rationale': instance.rationale,
   'signals': instance.signals,
   'risks': instance.risks,
+  'evidence': instance.evidence.map((e) => e.toJson()).toList(),
   'scored_at': instance.scoredAt.toIso8601String(),
 };
 
@@ -34,6 +40,20 @@ const _$ScoreConfidenceEnumMap = {
   ScoreConfidence.low: 'low',
   ScoreConfidence.medium: 'medium',
   ScoreConfidence.high: 'high',
+};
+
+_Evidence _$EvidenceFromJson(Map<String, dynamic> json) => _Evidence(
+  claim: json['claim'] as String,
+  source: json['source'] as String?,
+  date: json['date'] as String?,
+  supports: json['supports'] as String?,
+);
+
+Map<String, dynamic> _$EvidenceToJson(_Evidence instance) => <String, dynamic>{
+  'claim': instance.claim,
+  'source': instance.source,
+  'date': instance.date,
+  'supports': instance.supports,
 };
 
 _Market _$MarketFromJson(Map<String, dynamic> json) => _Market(

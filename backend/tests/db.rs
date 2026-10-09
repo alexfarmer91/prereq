@@ -118,7 +118,7 @@ async fn ai_scores_persist_and_return_latest() {
         eprintln!("TEST_DATABASE_URL not set — skipping DB integration test");
         return;
     };
-    use prereq_backend::models::market::Score;
+    use prereq_backend::models::market::{Evidence, Score};
 
     let pool = db::init(Some(&url)).await.expect("db connect + migrate");
     let ticker = format!("IT-SCORE-{}", uuid::Uuid::new_v4());
@@ -132,6 +132,7 @@ async fn ai_scores_persist_and_return_latest() {
         rationale: "first".into(),
         signals: vec!["s1".into()],
         risks: vec!["r1".into()],
+        evidence: vec![],
         scored_at: chrono::Utc::now() - chrono::Duration::hours(1),
         market_price_at_score: Some(0.5),
     };
@@ -162,12 +163,19 @@ async fn ai_scores_persist_and_return_latest() {
     db::scores::insert(&pool, &new(&score)).await.unwrap();
 
     score.rationale = "second".into();
+    score.evidence = vec![Evidence {
+        claim: "Poll lead".into(),
+        source: Some("https://example.com".into()),
+        date: None,
+        supports: Some("yes".into()),
+    }];
     score.scored_at = chrono::Utc::now();
     db::scores::insert(&pool, &new(&score)).await.unwrap();
 
     let latest = db::scores::latest(&pool, &ticker).await.unwrap().unwrap();
     assert_eq!(latest.rationale, "second");
     assert_eq!(latest.signals, vec!["s1"]);
+    assert_eq!(latest.evidence, score.evidence);
     assert_eq!(latest.market_price_at_score, Some(0.5));
 
     let batch = db::scores::latest_for(&pool, &[ticker.clone(), "IT-NONE".into()])

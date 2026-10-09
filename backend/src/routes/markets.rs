@@ -177,6 +177,7 @@ mod tests {
                 rationale: String::new(),
                 signals: vec![],
                 risks: vec![],
+                evidence: vec![],
                 scored_at: Utc::now(),
                 market_price_at_score: None,
             }),

@@ -133,6 +133,10 @@ class ScoreCard extends StatelessWidget {
                 items: score.risks,
               ),
             ],
+            if (score.evidence.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _EvidenceList(evidence: score.evidence),
+            ],
             const SizedBox(height: 12),
             Text(
               'Scored ${formatDateTimeUtc(score.scoredAt)}',
@@ -210,3 +214,61 @@ class _BulletList extends StatelessWidget {
     );
   }
 }
+
+/// Evidence the AI cited. Sources are shown as text (selectable, not links)
+/// and labelled as unverified: they come from the model.
+class _EvidenceList extends StatelessWidget {
+  const _EvidenceList({required this.evidence});
+
+  final List<Evidence> evidence;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall
+        ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.fact_check_outlined,
+                size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: 6),
+            Text('Evidence cited by the AI',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(color: AppColors.textSecondary)),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 22, bottom: 4),
+          child: Text('Not independently verified.', style: muted),
+        ),
+        for (final item in evidence)
+          Padding(
+            padding: const EdgeInsets.only(left: 22, bottom: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_supportsLabel(item.supports)}${item.claim}',
+                  style: theme.textTheme.bodySmall,
+                ),
+                if (item.source != null || item.date != null)
+                  SelectableText(
+                    [item.source, item.date].whereType<String>().join(' · '),
+                    style: muted,
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+String _supportsLabel(String? supports) => switch (supports) {
+      'yes' => 'For YES: ',
+      'no' => 'For NO: ',
+      _ => '',
+    };

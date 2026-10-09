@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 
 use crate::db;
 use crate::error::AppError;
-use crate::models::market::{Market, Score};
+use crate::models::market::{Evidence, Market, Score};
 use crate::AppState;
 
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
@@ -18,7 +18,7 @@ const MODEL: &str = "claude-sonnet-5";
 /// Recorded on every attempt. Bump whenever `build_prompt`, its inputs, or
 /// the model change, so forecasts from different setups are never pooled in
 /// evaluation. Rows without a version predate the ledger (legacy).
-pub const PROMPT_VERSION: &str = "2";
+pub const PROMPT_VERSION: &str = "3";
 
 // --- Rescore policy -------------------------------------------------------
 // Every Claude score is persisted to Postgres (`ai_scores`) and reused until
@@ -236,11 +236,18 @@ pub async fn get_or_score(
         Err(e) => {
             persist_failure(state, market, requested_at, &e).await;
             // A global pause already covers every ticker; only back off this
-            // one for ticker-specific failures (bad JSON, timeouts, ...).
+            // one for ticker-specific failures (bad JSON, timeouts, ...). An
+            // abstention is a considered answer, so don't re-ask until a
+            // normal score would have gone stale anyway.
             if !is_paused(state).await {
+                let backoff = if failure_kind(&e.to_string()) == "abstained" {
+                    max_score_age().to_std().unwrap_or(FAILURE_BACKOFF)
+                } else {
+                    FAILURE_BACKOFF
+                };
                 state
                     .cache
-                    .set(&failure_key(&market.ticker), "1", FAILURE_BACKOFF)
+                    .set(&failure_key(&market.ticker), "1", backoff)
                     .await;
             }
             match existing {
@@ -328,7 +335,9 @@ async fn persist_failure(
 
 /// Bucket a scoring error by the messages `score_market` produces.
 fn failure_kind(message: &str) -> &'static str {
-    if message.contains("Unparseable score") {
+    if message.contains(ABSTAINED) {
+        "abstained"
+    } else if message.contains("Unparseable score") {
         "parse_failure"
     } else if message.contains("Out-of-range fair_probability") {
         "invalid_probability"
@@ -470,13 +479,22 @@ async fn score_market(
         .collect::<Vec<_>>()
         .join("");
 
-    let mut score = parse_score(&text).ok_or_else(|| {
-        let preview: String = text.chars().take(500).collect();
-        AppError::Internal(format!(
-            "Unparseable score for {}: {preview:?}",
-            market.ticker
-        ))
-    })?;
+    let mut score = match parse_output(&text) {
+        Some(Parsed::Score(score)) => *score,
+        Some(Parsed::Abstained(reason)) => {
+            return Err(AppError::Internal(format!(
+                "{ABSTAINED} for {}: {reason}",
+                market.ticker
+            )))
+        }
+        None => {
+            let preview: String = text.chars().take(500).collect();
+            return Err(AppError::Internal(format!(
+                "Unparseable score for {}: {preview:?}",
+                market.ticker
+            )));
+        }
+    };
 
     if !valid_probability(score.fair_probability) {
         return Err(AppError::Internal(format!(
@@ -528,48 +546,140 @@ fn strip_encrypted(value: &mut Value) {
 fn build_prompt(market: &Market) -> String {
     let research_instruction = if web_search_enabled() {
         "If recent news could change your estimate, use web search to check \
-         before scoring."
+         before scoring, and cite what you found in \"evidence\"."
     } else {
-        "Web search is not available for this request — score from the \
-         information given."
+        "Web search is not available for this request — work from the \
+         information given and what you already know, and say so in \
+         \"evidence\"."
     };
     format!(
-        r#"You are a prediction market analyst. Score this market.
+        r#"You are a prediction market analyst. Estimate the probability that this market resolves YES.
 
 Market: {title}
 Resolution rules: {rules}
 Current yes price: ${yes_bid:.2} bid / ${yes_ask:.2} ask
 24h volume: ${volume:.2}
 Closes: {close}
+Current time: {now}
 
-{research_instruction} Respond with ONLY valid JSON, no other text.
-"fair_probability" is your probability, from 0 to 1, that this market
-resolves YES.
+{research_instruction}
+
+Abstain instead of guessing — set "abstain" to true, explain in
+"abstain_reason", and set "fair_probability" to null — when:
+- the resolution rules are too ambiguous to know what counts as YES;
+- the outcome already appears to be decided or publicly known;
+- you have no meaningful information beyond the market price.
+
+Respond with ONLY valid JSON, no other text:
 {{
+  "abstain": false,
+  "abstain_reason": "",
   "fair_probability": 0.00,
   "confidence": "low|medium|high",
   "rationale": "2-3 sentence explanation",
+  "evidence": [
+    {{"claim": "one specific fact", "source": "URL, or 'resolution rules' / 'background knowledge'", "date": "YYYY-MM-DD or empty", "supports": "yes|no|neutral"}}
+  ],
   "signals": ["signal 1", "signal 2"],
   "risks": ["risk 1", "risk 2"]
-}}"#,
+}}
+"fair_probability" is from 0 to 1. List at most 6 evidence items."#,
         title = market.title,
         rules = market.rules_primary.as_deref().unwrap_or("(not provided)"),
         yes_bid = market.yes_bid,
         yes_ask = market.yes_ask,
         volume = market.volume_24h,
         close = market.close_time,
+        now = Utc::now().format("%Y-%m-%d %H:%M UTC"),
     )
 }
 
-/// Extract the first JSON object from model output, tolerating code fences
-/// and surrounding prose.
-pub fn parse_score(text: &str) -> Option<Score> {
+/// Error-message prefix for abstentions; `failure_kind` keys off it.
+const ABSTAINED: &str = "Model abstained";
+/// Evidence items kept per score.
+const MAX_EVIDENCE: usize = 8;
+
+/// What the model returned: an estimate, or a reasoned refusal to give one.
+#[derive(Debug)]
+pub enum Parsed {
+    Score(Box<Score>),
+    Abstained(String),
+}
+
+/// The model's JSON as sent. Evidence items are kept as raw values so one
+/// malformed item is dropped instead of failing the whole score.
+#[derive(Deserialize)]
+struct ModelOutput {
+    #[serde(default)]
+    abstain: bool,
+    #[serde(default)]
+    abstain_reason: Option<String>,
+    #[serde(default)]
+    fair_probability: Option<f64>,
+    #[serde(default)]
+    confidence: Option<String>,
+    #[serde(default)]
+    rationale: String,
+    #[serde(default)]
+    evidence: Vec<Value>,
+    #[serde(default)]
+    signals: Vec<String>,
+    #[serde(default)]
+    risks: Vec<String>,
+}
+
+fn non_empty(s: Option<String>) -> Option<String> {
+    s.map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+}
+
+fn parse_evidence(items: Vec<Value>) -> Vec<Evidence> {
+    items
+        .into_iter()
+        .filter_map(|v| serde_json::from_value::<Evidence>(v).ok())
+        .filter(|e| !e.claim.trim().is_empty())
+        .map(|e| Evidence {
+            claim: e.claim.trim().to_string(),
+            source: non_empty(e.source),
+            date: non_empty(e.date),
+            supports: non_empty(e.supports).map(|s| s.to_lowercase()),
+        })
+        .take(MAX_EVIDENCE)
+        .collect()
+}
+
+/// Extract the first JSON object from model output (tolerating code fences
+/// and surrounding prose). `None` when it isn't a usable estimate or a
+/// well-formed abstention.
+pub fn parse_output(text: &str) -> Option<Parsed> {
     let start = text.find('{')?;
     let end = text.rfind('}')?;
     if end <= start {
         return None;
     }
-    serde_json::from_str::<Score>(&text[start..=end]).ok()
+    let out: ModelOutput = serde_json::from_str(&text[start..=end]).ok()?;
+    if out.abstain {
+        let reason = non_empty(out.abstain_reason).unwrap_or_else(|| "(no reason given)".into());
+        return Some(Parsed::Abstained(reason));
+    }
+    // The app decodes confidence as a strict enum; anything else would break
+    // the whole market list client-side.
+    let confidence = non_empty(out.confidence)?.to_lowercase();
+    if !matches!(confidence.as_str(), "low" | "medium" | "high") {
+        return None;
+    }
+    Some(Parsed::Score(Box::new(Score {
+        fair_probability: out.fair_probability?,
+        confidence,
+        edge: 0.0,
+        ev_yes_per_dollar: None,
+        ev_no_per_dollar: None,
+        rationale: out.rationale,
+        signals: out.signals,
+        risks: out.risks,
+        evidence: parse_evidence(out.evidence),
+        scored_at: Utc::now(),
+        market_price_at_score: None,
+    })))
 }
 
 #[derive(Debug, Deserialize)]
@@ -606,6 +716,62 @@ struct ServerToolUsage {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn parse_score(text: &str) -> Option<Score> {
+        match parse_output(text)? {
+            Parsed::Score(score) => Some(*score),
+            Parsed::Abstained(_) => None,
+        }
+    }
+
+    #[test]
+    fn parses_v3_output_with_evidence() {
+        let text = r#"{"abstain":false,"abstain_reason":"","fair_probability":0.7,
+            "confidence":"high","rationale":"r","signals":[],"risks":[],
+            "evidence":[
+              {"claim":" Poll lead of 5 points ","source":"https://example.com/poll","date":"2026-10-01","supports":"YES"},
+              {"claim":"Rules count certified results only","source":"resolution rules","date":"","supports":"neutral"},
+              {"claim":"","source":"x"},
+              {"not_a_claim":true},
+              "just a string"
+            ]}"#;
+        let score = parse_score(text).expect("should parse");
+        assert_eq!(score.evidence.len(), 2, "malformed items are dropped");
+        assert_eq!(score.evidence[0].claim, "Poll lead of 5 points");
+        assert_eq!(score.evidence[0].supports.as_deref(), Some("yes"));
+        assert_eq!(score.evidence[1].date, None, "empty strings become None");
+    }
+
+    #[test]
+    fn abstention_is_not_a_score() {
+        let text = r#"{"abstain":true,"abstain_reason":"Game already finished 3-1","fair_probability":null}"#;
+        match parse_output(text) {
+            Some(Parsed::Abstained(reason)) => assert_eq!(reason, "Game already finished 3-1"),
+            other => panic!("expected abstention, got {other:?}"),
+        }
+        let e = AppError::Internal(format!("{ABSTAINED} for T: reason"));
+        assert_eq!(failure_kind(&e.to_string()), "abstained");
+    }
+
+    #[test]
+    fn missing_probability_or_confidence_without_abstaining_is_unparseable() {
+        assert!(
+            parse_output(r#"{"abstain":false,"fair_probability":null,"confidence":"low"}"#)
+                .is_none()
+        );
+        assert!(parse_output(r#"{"fair_probability":0.5,"rationale":"no confidence"}"#).is_none());
+        assert!(parse_output(r#"{"fair_probability":0.5,"confidence":"very high"}"#).is_none());
+        let score = parse_score(r#"{"fair_probability":0.5,"confidence":"High"}"#).unwrap();
+        assert_eq!(score.confidence, "high");
+    }
+
+    #[test]
+    fn prompt_carries_the_current_date_and_abstain_option() {
+        let prompt = build_prompt(&market_at(0.5));
+        assert!(prompt.contains(&Utc::now().format("%Y-%m-%d").to_string()));
+        assert!(prompt.contains("\"abstain\""));
+        assert!(prompt.contains("\"evidence\""));
+    }
 
     #[test]
     fn parses_bare_json() {
@@ -653,6 +819,7 @@ mod tests {
             rationale: String::new(),
             signals: vec![],
             risks: vec![],
+            evidence: vec![],
             scored_at: Utc::now() - age,
             market_price_at_score: Some(price),
         }

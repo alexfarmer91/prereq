@@ -35,6 +35,10 @@ const marketJson = '''
     "rationale": "Forecast models agree.",
     "signals": ["NWS forecast 86F", "Warm front"],
     "risks": ["Cloud cover", "Station variance"],
+    "evidence": [
+      {"claim": "NWS forecasts 86F", "source": "https://weather.gov", "date": "2026-05-17", "supports": "yes"},
+      {"claim": "Rules use Central Park station", "source": null, "date": null, "supports": null}
+    ],
     "scored_at": "2026-07-14T12:00:00Z"
   }
 }
@@ -64,6 +68,17 @@ void main() {
       expect(market.score!.evYesPerDollar, 0.08);
       // Unavailable EV stays null — never silently becomes zero.
       expect(market.score!.evNoPerDollar, isNull);
+    });
+
+    test('evidence parses, and is empty for scores that predate it', () {
+      final score = Market.fromJson(decode(marketJson)).score!;
+      expect(score.evidence, hasLength(2));
+      expect(score.evidence.first.supports, 'yes');
+      expect(score.evidence.last.source, isNull);
+
+      final json = decode(marketJson);
+      (json['score'] as Map<String, dynamic>).remove('evidence');
+      expect(Market.fromJson(json).score!.evidence, isEmpty);
     });
 
     test('score without EV fields (no usable ask) parses as null', () {

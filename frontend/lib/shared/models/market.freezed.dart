@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Score {
 
- double get fairProbability; ScoreConfidence get confidence; double get edge; double? get evYesPerDollar; double? get evNoPerDollar; String get rationale; List<String> get signals; List<String> get risks; DateTime get scoredAt;
+ double get fairProbability; ScoreConfidence get confidence; double get edge; double? get evYesPerDollar; double? get evNoPerDollar; String get rationale; List<String> get signals; List<String> get risks; List<Evidence> get evidence; DateTime get scoredAt;
 /// Create a copy of Score
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ScoreCopyWith<Score> get copyWith => _$ScoreCopyWithImpl<Score>(this as Score, 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evYesPerDollar, evYesPerDollar) || other.evYesPerDollar == evYesPerDollar)&&(identical(other.evNoPerDollar, evNoPerDollar) || other.evNoPerDollar == evNoPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other.signals, signals)&&const DeepCollectionEquality().equals(other.risks, risks)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evYesPerDollar, evYesPerDollar) || other.evYesPerDollar == evYesPerDollar)&&(identical(other.evNoPerDollar, evNoPerDollar) || other.evNoPerDollar == evNoPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other.signals, signals)&&const DeepCollectionEquality().equals(other.risks, risks)&&const DeepCollectionEquality().equals(other.evidence, evidence)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evYesPerDollar,evNoPerDollar,rationale,const DeepCollectionEquality().hash(signals),const DeepCollectionEquality().hash(risks),scoredAt);
+int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evYesPerDollar,evNoPerDollar,rationale,const DeepCollectionEquality().hash(signals),const DeepCollectionEquality().hash(risks),const DeepCollectionEquality().hash(evidence),scoredAt);
 
 @override
 String toString() {
-  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evYesPerDollar: $evYesPerDollar, evNoPerDollar: $evNoPerDollar, rationale: $rationale, signals: $signals, risks: $risks, scoredAt: $scoredAt)';
+  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evYesPerDollar: $evYesPerDollar, evNoPerDollar: $evNoPerDollar, rationale: $rationale, signals: $signals, risks: $risks, evidence: $evidence, scoredAt: $scoredAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ScoreCopyWith<$Res>  {
   factory $ScoreCopyWith(Score value, $Res Function(Score) _then) = _$ScoreCopyWithImpl;
 @useResult
 $Res call({
- double fairProbability, ScoreConfidence confidence, double edge, double? evYesPerDollar, double? evNoPerDollar, String rationale, List<String> signals, List<String> risks, DateTime scoredAt
+ double fairProbability, ScoreConfidence confidence, double edge, double? evYesPerDollar, double? evNoPerDollar, String rationale, List<String> signals, List<String> risks, List<Evidence> evidence, DateTime scoredAt
 });
 
 
@@ -65,7 +65,7 @@ class _$ScoreCopyWithImpl<$Res>
 
 /// Create a copy of Score
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evYesPerDollar = freezed,Object? evNoPerDollar = freezed,Object? rationale = null,Object? signals = null,Object? risks = null,Object? scoredAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evYesPerDollar = freezed,Object? evNoPerDollar = freezed,Object? rationale = null,Object? signals = null,Object? risks = null,Object? evidence = null,Object? scoredAt = null,}) {
   return _then(_self.copyWith(
 fairProbability: null == fairProbability ? _self.fairProbability : fairProbability // ignore: cast_nullable_to_non_nullable
 as double,confidence: null == confidence ? _self.confidence : confidence // ignore: cast_nullable_to_non_nullable
@@ -75,7 +75,8 @@ as double?,evNoPerDollar: freezed == evNoPerDollar ? _self.evNoPerDollar : evNoP
 as double?,rationale: null == rationale ? _self.rationale : rationale // ignore: cast_nullable_to_non_nullable
 as String,signals: null == signals ? _self.signals : signals // ignore: cast_nullable_to_non_nullable
 as List<String>,risks: null == risks ? _self.risks : risks // ignore: cast_nullable_to_non_nullable
-as List<String>,scoredAt: null == scoredAt ? _self.scoredAt : scoredAt // ignore: cast_nullable_to_non_nullable
+as List<String>,evidence: null == evidence ? _self.evidence : evidence // ignore: cast_nullable_to_non_nullable
+as List<Evidence>,scoredAt: null == scoredAt ? _self.scoredAt : scoredAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
   ));
 }
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  List<Evidence> evidence,  DateTime scoredAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Score() when $default != null:
-return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
+return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.evidence,_that.scoredAt);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPer
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  List<Evidence> evidence,  DateTime scoredAt)  $default,) {final _that = this;
 switch (_that) {
 case _Score():
-return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
+return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.evidence,_that.scoredAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPer
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  DateTime scoredAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double fairProbability,  ScoreConfidence confidence,  double edge,  double? evYesPerDollar,  double? evNoPerDollar,  String rationale,  List<String> signals,  List<String> risks,  List<Evidence> evidence,  DateTime scoredAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Score() when $default != null:
-return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.scoredAt);case _:
+return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPerDollar,_that.evNoPerDollar,_that.rationale,_that.signals,_that.risks,_that.evidence,_that.scoredAt);case _:
   return null;
 
 }
@@ -217,7 +218,7 @@ return $default(_that.fairProbability,_that.confidence,_that.edge,_that.evYesPer
 @JsonSerializable()
 
 class _Score implements Score {
-  const _Score({required this.fairProbability, required this.confidence, required this.edge, this.evYesPerDollar, this.evNoPerDollar, required this.rationale, required final  List<String> signals, required final  List<String> risks, required this.scoredAt}): _signals = signals,_risks = risks;
+  const _Score({required this.fairProbability, required this.confidence, required this.edge, this.evYesPerDollar, this.evNoPerDollar, required this.rationale, required final  List<String> signals, required final  List<String> risks, final  List<Evidence> evidence = const <Evidence>[], required this.scoredAt}): _signals = signals,_risks = risks,_evidence = evidence;
   factory _Score.fromJson(Map<String, dynamic> json) => _$ScoreFromJson(json);
 
 @override final  double fairProbability;
@@ -240,6 +241,13 @@ class _Score implements Score {
   return EqualUnmodifiableListView(_risks);
 }
 
+ final  List<Evidence> _evidence;
+@override@JsonKey() List<Evidence> get evidence {
+  if (_evidence is EqualUnmodifiableListView) return _evidence;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_evidence);
+}
+
 @override final  DateTime scoredAt;
 
 /// Create a copy of Score
@@ -255,16 +263,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evYesPerDollar, evYesPerDollar) || other.evYesPerDollar == evYesPerDollar)&&(identical(other.evNoPerDollar, evNoPerDollar) || other.evNoPerDollar == evNoPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other._signals, _signals)&&const DeepCollectionEquality().equals(other._risks, _risks)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Score&&(identical(other.fairProbability, fairProbability) || other.fairProbability == fairProbability)&&(identical(other.confidence, confidence) || other.confidence == confidence)&&(identical(other.edge, edge) || other.edge == edge)&&(identical(other.evYesPerDollar, evYesPerDollar) || other.evYesPerDollar == evYesPerDollar)&&(identical(other.evNoPerDollar, evNoPerDollar) || other.evNoPerDollar == evNoPerDollar)&&(identical(other.rationale, rationale) || other.rationale == rationale)&&const DeepCollectionEquality().equals(other._signals, _signals)&&const DeepCollectionEquality().equals(other._risks, _risks)&&const DeepCollectionEquality().equals(other._evidence, _evidence)&&(identical(other.scoredAt, scoredAt) || other.scoredAt == scoredAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evYesPerDollar,evNoPerDollar,rationale,const DeepCollectionEquality().hash(_signals),const DeepCollectionEquality().hash(_risks),scoredAt);
+int get hashCode => Object.hash(runtimeType,fairProbability,confidence,edge,evYesPerDollar,evNoPerDollar,rationale,const DeepCollectionEquality().hash(_signals),const DeepCollectionEquality().hash(_risks),const DeepCollectionEquality().hash(_evidence),scoredAt);
 
 @override
 String toString() {
-  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evYesPerDollar: $evYesPerDollar, evNoPerDollar: $evNoPerDollar, rationale: $rationale, signals: $signals, risks: $risks, scoredAt: $scoredAt)';
+  return 'Score(fairProbability: $fairProbability, confidence: $confidence, edge: $edge, evYesPerDollar: $evYesPerDollar, evNoPerDollar: $evNoPerDollar, rationale: $rationale, signals: $signals, risks: $risks, evidence: $evidence, scoredAt: $scoredAt)';
 }
 
 
@@ -275,7 +283,7 @@ abstract mixin class _$ScoreCopyWith<$Res> implements $ScoreCopyWith<$Res> {
   factory _$ScoreCopyWith(_Score value, $Res Function(_Score) _then) = __$ScoreCopyWithImpl;
 @override @useResult
 $Res call({
- double fairProbability, ScoreConfidence confidence, double edge, double? evYesPerDollar, double? evNoPerDollar, String rationale, List<String> signals, List<String> risks, DateTime scoredAt
+ double fairProbability, ScoreConfidence confidence, double edge, double? evYesPerDollar, double? evNoPerDollar, String rationale, List<String> signals, List<String> risks, List<Evidence> evidence, DateTime scoredAt
 });
 
 
@@ -292,7 +300,7 @@ class __$ScoreCopyWithImpl<$Res>
 
 /// Create a copy of Score
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evYesPerDollar = freezed,Object? evNoPerDollar = freezed,Object? rationale = null,Object? signals = null,Object? risks = null,Object? scoredAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fairProbability = null,Object? confidence = null,Object? edge = null,Object? evYesPerDollar = freezed,Object? evNoPerDollar = freezed,Object? rationale = null,Object? signals = null,Object? risks = null,Object? evidence = null,Object? scoredAt = null,}) {
   return _then(_Score(
 fairProbability: null == fairProbability ? _self.fairProbability : fairProbability // ignore: cast_nullable_to_non_nullable
 as double,confidence: null == confidence ? _self.confidence : confidence // ignore: cast_nullable_to_non_nullable
@@ -302,8 +310,283 @@ as double?,evNoPerDollar: freezed == evNoPerDollar ? _self.evNoPerDollar : evNoP
 as double?,rationale: null == rationale ? _self.rationale : rationale // ignore: cast_nullable_to_non_nullable
 as String,signals: null == signals ? _self._signals : signals // ignore: cast_nullable_to_non_nullable
 as List<String>,risks: null == risks ? _self._risks : risks // ignore: cast_nullable_to_non_nullable
-as List<String>,scoredAt: null == scoredAt ? _self.scoredAt : scoredAt // ignore: cast_nullable_to_non_nullable
+as List<String>,evidence: null == evidence ? _self._evidence : evidence // ignore: cast_nullable_to_non_nullable
+as List<Evidence>,scoredAt: null == scoredAt ? _self.scoredAt : scoredAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$Evidence {
+
+ String get claim; String? get source; String? get date;/// yes | no | neutral — which outcome the claim points toward.
+ String? get supports;
+/// Create a copy of Evidence
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$EvidenceCopyWith<Evidence> get copyWith => _$EvidenceCopyWithImpl<Evidence>(this as Evidence, _$identity);
+
+  /// Serializes this Evidence to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Evidence&&(identical(other.claim, claim) || other.claim == claim)&&(identical(other.source, source) || other.source == source)&&(identical(other.date, date) || other.date == date)&&(identical(other.supports, supports) || other.supports == supports));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,claim,source,date,supports);
+
+@override
+String toString() {
+  return 'Evidence(claim: $claim, source: $source, date: $date, supports: $supports)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $EvidenceCopyWith<$Res>  {
+  factory $EvidenceCopyWith(Evidence value, $Res Function(Evidence) _then) = _$EvidenceCopyWithImpl;
+@useResult
+$Res call({
+ String claim, String? source, String? date, String? supports
+});
+
+
+
+
+}
+/// @nodoc
+class _$EvidenceCopyWithImpl<$Res>
+    implements $EvidenceCopyWith<$Res> {
+  _$EvidenceCopyWithImpl(this._self, this._then);
+
+  final Evidence _self;
+  final $Res Function(Evidence) _then;
+
+/// Create a copy of Evidence
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? claim = null,Object? source = freezed,Object? date = freezed,Object? supports = freezed,}) {
+  return _then(_self.copyWith(
+claim: null == claim ? _self.claim : claim // ignore: cast_nullable_to_non_nullable
+as String,source: freezed == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
+as String?,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
+as String?,supports: freezed == supports ? _self.supports : supports // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [Evidence].
+extension EvidencePatterns on Evidence {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Evidence value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _Evidence() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Evidence value)  $default,){
+final _that = this;
+switch (_that) {
+case _Evidence():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Evidence value)?  $default,){
+final _that = this;
+switch (_that) {
+case _Evidence() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String claim,  String? source,  String? date,  String? supports)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _Evidence() when $default != null:
+return $default(_that.claim,_that.source,_that.date,_that.supports);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String claim,  String? source,  String? date,  String? supports)  $default,) {final _that = this;
+switch (_that) {
+case _Evidence():
+return $default(_that.claim,_that.source,_that.date,_that.supports);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String claim,  String? source,  String? date,  String? supports)?  $default,) {final _that = this;
+switch (_that) {
+case _Evidence() when $default != null:
+return $default(_that.claim,_that.source,_that.date,_that.supports);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _Evidence implements Evidence {
+  const _Evidence({required this.claim, this.source, this.date, this.supports});
+  factory _Evidence.fromJson(Map<String, dynamic> json) => _$EvidenceFromJson(json);
+
+@override final  String claim;
+@override final  String? source;
+@override final  String? date;
+/// yes | no | neutral — which outcome the claim points toward.
+@override final  String? supports;
+
+/// Create a copy of Evidence
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$EvidenceCopyWith<_Evidence> get copyWith => __$EvidenceCopyWithImpl<_Evidence>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$EvidenceToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Evidence&&(identical(other.claim, claim) || other.claim == claim)&&(identical(other.source, source) || other.source == source)&&(identical(other.date, date) || other.date == date)&&(identical(other.supports, supports) || other.supports == supports));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,claim,source,date,supports);
+
+@override
+String toString() {
+  return 'Evidence(claim: $claim, source: $source, date: $date, supports: $supports)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$EvidenceCopyWith<$Res> implements $EvidenceCopyWith<$Res> {
+  factory _$EvidenceCopyWith(_Evidence value, $Res Function(_Evidence) _then) = __$EvidenceCopyWithImpl;
+@override @useResult
+$Res call({
+ String claim, String? source, String? date, String? supports
+});
+
+
+
+
+}
+/// @nodoc
+class __$EvidenceCopyWithImpl<$Res>
+    implements _$EvidenceCopyWith<$Res> {
+  __$EvidenceCopyWithImpl(this._self, this._then);
+
+  final _Evidence _self;
+  final $Res Function(_Evidence) _then;
+
+/// Create a copy of Evidence
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? claim = null,Object? source = freezed,Object? date = freezed,Object? supports = freezed,}) {
+  return _then(_Evidence(
+claim: null == claim ? _self.claim : claim // ignore: cast_nullable_to_non_nullable
+as String,source: freezed == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
+as String?,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
+as String?,supports: freezed == supports ? _self.supports : supports // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

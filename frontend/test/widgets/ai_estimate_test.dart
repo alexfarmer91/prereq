@@ -52,6 +52,30 @@ void main() {
     expect(find.text('Fair probability'), findsNothing);
   });
 
+  testWidgets('ScoreCard lists cited evidence as unverified', (tester) async {
+    final score = confidentScore().copyWith(evidence: const [
+      Evidence(
+          claim: 'Poll lead of 5',
+          source: 'https://example.com/poll',
+          date: '2026-10-01',
+          supports: 'yes'),
+      Evidence(claim: 'Rules count certified results only'),
+    ]);
+    await tester.pumpWidget(host(ScoreCard(score: score)));
+
+    expect(find.text('Evidence cited by the AI'), findsOneWidget);
+    expect(find.text('Not independently verified.'), findsOneWidget);
+    expect(find.text('For YES: Poll lead of 5'), findsOneWidget);
+    expect(find.text('https://example.com/poll · 2026-10-01'), findsOneWidget);
+    expect(find.text('Rules count certified results only'), findsOneWidget);
+  });
+
+  testWidgets('ScoreCard hides the evidence section when there is none',
+      (tester) async {
+    await tester.pumpWidget(host(ScoreCard(score: confidentScore())));
+    expect(find.text('Evidence cited by the AI'), findsNothing);
+  });
+
   testWidgets('ScoreCard shows unavailable EV as a dash, not zero',
       (tester) async {
     await tester.pumpWidget(host(ScoreCard(score: confidentScore(evNo: null))));

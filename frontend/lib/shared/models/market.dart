@@ -24,10 +24,28 @@ abstract class Score with _$Score {
     required String rationale,
     required List<String> signals,
     required List<String> risks,
+    @Default(<Evidence>[]) List<Evidence> evidence,
     required DateTime scoredAt,
   }) = _Score;
 
   factory Score.fromJson(Map<String, dynamic> json) => _$ScoreFromJson(json);
+}
+
+/// One piece of evidence the AI cited (prompt v3+). These are the model's
+/// claims; sources are not independently verified.
+@freezed
+abstract class Evidence with _$Evidence {
+  const factory Evidence({
+    required String claim,
+    String? source,
+    String? date,
+
+    /// yes | no | neutral — which outcome the claim points toward.
+    String? supports,
+  }) = _Evidence;
+
+  factory Evidence.fromJson(Map<String, dynamic> json) =>
+      _$EvidenceFromJson(json);
 }
 
 /// A single Kalshi market as served by the backend. All prices are dollars.

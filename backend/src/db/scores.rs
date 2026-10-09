@@ -55,6 +55,7 @@ struct ScoreRow {
     rationale: String,
     signals: String,
     risks: String,
+    evidence: String,
     market_price_at_score: f64,
     scored_at: DateTime<Utc>,
 }
@@ -72,6 +73,7 @@ impl ScoreRow {
             rationale: self.rationale,
             signals: serde_json::from_str(&self.signals).unwrap_or_default(),
             risks: serde_json::from_str(&self.risks).unwrap_or_default(),
+            evidence: serde_json::from_str(&self.evidence).unwrap_or_default(),
             scored_at: self.scored_at,
             market_price_at_score: Some(self.market_price_at_score),
         };
@@ -82,11 +84,13 @@ impl ScoreRow {
 // JSONB columns round-trip as text so no extra sqlx feature is needed.
 const COLUMNS: &str = "market_ticker, fair_probability, confidence, \
     rationale, signals::text AS signals, risks::text AS risks, \
+    COALESCE(evidence, '[]'::jsonb)::text AS evidence, \
     market_price_at_score, scored_at";
 
 pub async fn insert(pool: &PgPool, new: &NewScore<'_>) -> Result<(), AppError> {
     let signals = serde_json::to_string(&new.score.signals).unwrap_or_else(|_| "[]".into());
     let risks = serde_json::to_string(&new.score.risks).unwrap_or_else(|_| "[]".into());
+    let evidence = serde_json::to_string(&new.score.evidence).unwrap_or_else(|_| "[]".into());
     let raw = new.raw_content.map(Value::to_string);
     sqlx::query(
         "INSERT INTO ai_scores (
@@ -94,11 +98,11 @@ pub async fn insert(pool: &PgPool, new: &NewScore<'_>) -> Result<(), AppError> {
             rationale, signals, risks, market_price_at_score, model,
             web_search_enabled, web_search_count, input_tokens, output_tokens,
             raw_content, scored_at, requested_at, prompt_version, event_ticker,
-            category, market_close_time, yes_bid, yes_ask, no_bid, no_ask
+            category, market_close_time, yes_bid, yes_ask, no_bid, no_ask, evidence
          ) VALUES (
             $1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9,
             $10, $11, $12, $13, $14::jsonb, $15, $16, $17, $18,
-            $19, $20, $21, $22, $23, $24
+            $19, $20, $21, $22, $23, $24, $25::jsonb
          )",
     )
     .bind(new.market_ticker)
@@ -125,6 +129,7 @@ pub async fn insert(pool: &PgPool, new: &NewScore<'_>) -> Result<(), AppError> {
     .bind(new.context.yes_ask)
     .bind(new.context.no_bid)
     .bind(new.context.no_ask)
+    .bind(evidence)
     .execute(pool)
     .await?;
     Ok(())
